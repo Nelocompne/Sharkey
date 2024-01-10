@@ -124,6 +124,7 @@ export interface Locale {
     "pinned": string;
     "you": string;
     "clickToShow": string;
+    "patternHidden": string;
     "sensitive": string;
     "add": string;
     "reaction": string;

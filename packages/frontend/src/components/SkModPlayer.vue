@@ -1,116 +1,147 @@
 <template>
-<div v-if="hide" class="mod-player-disabled" @click="toggleVisible()">
+<div v-if="!available" :class="$style.disabled">
+	<MkLoading v-if="fetching"/>
+	<MkError v-else-if="error" @retry="load()"/>
+</div>
+<div v-else-if="hide" :class="$style.disabled" @click="toggleVisible()">
 	<div>
 		<b><i class="ph-eye ph-bold ph-lg"></i> {{ i18n.ts.sensitive }}</b>
 		<span>{{ i18n.ts.clickToShow }}</span>
 	</div>
 </div>
 
-<div v-else class="mod-player-enabled">
-	<div class="pattern-display" @click="togglePattern()">
-		<div v-if="patternHide" class="pattern-hide">
-			<b><i class="ph-eye ph-bold ph-lg"></i> Pattern Hidden</b>
-			<span>{{ i18n.ts.clickToShow }}</span>
+<div v-else :class="$style.enabled">
+	<div :class="$style.patternDisplay">
+		<div v-if="patternShow">
+			<div v-if="patData.length !== 0" ref="modPattern" :class="$style.pattern">
+				<span
+					v-for="(row, i) in patData[currentPattern]"
+					ref="initRow"
+					:key="i"
+					:class="[$style.row, { [$style.active]: isRowActive(i) }]"
+				>
+					<span :class="{ [$style.colQuarter]: i % 4 === 0 }">{{ indexText(i) }}</span>
+					<span :class="$style.inner">{{ getRowText(row) }}</span>
+				</span>
+			</div>
+			<MkLoading v-else/>
 		</div>
-		<canvas ref="displayCanvas" class="pattern-canvas"></canvas>
+		<div v-else :class="$style.pattern" @click="showPattern()">
+			<p>{{ i18n.ts.patternHidden }}</p>
+		</div>
 	</div>
-	<div class="controls">
-		<button class="play" @click="playPause()">
+	<div :class="$style.controls">
+		<button v-if="!loading" :class="$style.play" @click="playPause()">
 			<i v-if="playing" class="ph-pause ph-bold ph-lg"></i>
 			<i v-else class="ph-play ph-bold ph-lg"></i>
 		</button>
-		<button class="stop" @click="stop()">
+		<MkLoading v-else :em="true"/>
+		<button :class="$style.stop" @click="stop()">
 			<i class="ph-stop ph-bold ph-lg"></i>
 		</button>
-		<input ref="progress" v-model="position" class="progress" type="range" min="0" max="1" step="0.1" @mousedown="initSeek()" @mouseup="performSeek()"/>
+		<button :class="$style.loop" @click="toggleLoop()">
+			<i v-if="loop === -1" class="ph-repeat ph-bold ph-lg"></i>
+			<i v-else class="ph-repeat-once ph-bold ph-lg"></i>
+		</button>
+		<input ref="progress" v-model="position" :class="$style.progress" type="range" min="0" :max="length" step="0.1" @mousedown="initSeek()" @mouseup="performSeek()"/>
 		<input v-model="player.context.gain.value" type="range" min="0" max="1" step="0.1"/>
-		<a class="download" :title="i18n.ts.download" :href="module.url" target="_blank">
+		<a :class="$style.download" :title="i18n.ts.download" :href="module.url" target="_blank">
 			<i class="ph-download ph-bold ph-lg"></i>
 		</a>
 	</div>
-	<i class="hide ph-eye-slash ph-bold ph-lg" @click="toggleVisible()"></i>
+	<i :class="$style.hide" class="ph-eye-slash ph-bold ph-lg" @click="toggleVisible()"></i>
 </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, computed } from 'vue';
+import { ref, shallowRef, nextTick, onDeactivated, onMounted } from 'vue';
 import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
 import { defaultStore } from '@/store.js';
 import { ChiptuneJsPlayer, ChiptuneJsConfig } from '@/scripts/chiptune2.js';
 
-const CHAR_WIDTH = 6;
-const CHAR_HEIGHT = 12;
-const ROW_OFFSET_Y = 10;
-
-const colours = {
-	background: '#000000',
-	default: {
-		active: '#ffffff',
-		inactive: '#808080',
-	},
-	quarter: {
-		active: '#ffff00',
-		inactive: '#ffe135',
-	},
-	instr: {
-		active: '#80e0ff',
-		inactive: '#0099cc',
-	},
-	volume: {
-		active: '#80ff80',
-		inactive: '#008000',
-	},
-	fx: {
-		active: '#ff80e0',
-		inactive: '#800060',
-	},
-	operant: {
-		active: '#ffe080',
-		inactive: '#806000',
-	},
-};
-
 const props = defineProps<{
 	module: Misskey.entities.DriveFile
 }>();
 
-const isSensitive = computed(() => { return props.module.isSensitive; });
-const url = computed(() => { return props.module.url; });
-let hide = ref((defaultStore.state.nsfw === 'force') ? true : isSensitive.value && (defaultStore.state.nsfw !== 'ignore'));
-let patternHide = ref(false);
-let firstFrame = ref(true);
-let playing = ref(false);
-let displayCanvas = ref<HTMLCanvasElement>();
-let progress = ref<HTMLProgressElement>();
-let position = ref(0);
-const player = ref(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
+interface ModRow {
+	notes: string[];
+	insts: string[];
+	vols: string[];
+	fxs: string[];
+	ops: string[];
+}
 
-const rowBuffer = 24;
+const available = ref(false);
+const initRow = shallowRef<HTMLSpanElement>();
+const hide = ref(defaultStore.state.nsfw === 'force' ? true : props.module.isSensitive && defaultStore.state.nsfw !== 'ignore');
+const patternShow = ref(false);
+const playing = ref(false);
+const modPattern = ref<HTMLDivElement>();
+const progress = ref<HTMLProgressElement>();
+const position = ref(0);
+const player = shallowRef(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
+const patData = shallowRef([] as ModRow[][]);
+const currentPattern = ref(0);
+const nbChannels = ref(0);
+const length = ref(1);
+const loop = ref(0);
+const fetching = ref(true);
+const error = ref(false);
+const loading = ref(false);
+
+let currentRow = 0;
+let rowHeight = 0;
 let buffer = null;
 let isSeeking = false;
 
-player.value.load(url.value).then((result) => {
-	buffer = result;
-	try {
-		player.value.play(buffer);
-		progress.value!.max = player.value.duration();
-		display();
-	} catch (err) {
-		console.warn(err);
+function load() {
+	player.value.load(props.module.url).then((result) => {
+		buffer = result;
+		available.value = true;
+		error.value = false;
+		fetching.value = false;
+	}).catch((err) => {
+		console.error(err);
+		error.value = true;
+		fetching.value = false;
+	});
+}
+
+onMounted(load);
+
+function showPattern() {
+	patternShow.value = !patternShow.value;
+	nextTick(() => {
+		if (playing.value) display();
+		else stop();
+	});
+}
+
+function getRowText(row: ModRow) {
+	let text = '';
+	for (let i = 0; i < row.notes.length; i++) {
+		text = text.concat(
+			'|',
+			row.notes[i],
+			row.insts[i],
+			row.vols[i],
+			row.fxs[i],
+			row.ops[i],
+		);
 	}
-	player.value.stop();
-}).catch((error) => {
-	console.error(error);
-});
+	return text;
+}
 
 function playPause() {
-	player.value.addHandler('onRowChange', () => {
-		progress.value!.max = player.value.duration();
+	player.value.addHandler('onRowChange', (i: { index: number }) => {
+		currentRow = i.index;
+		currentPattern.value = player.value.getPattern();
+		length.value = player.value.duration();
 		if (!isSeeking) {
-			position.value = player.value.position() % player.value.duration();
+			position.value = player.value.position() % length.value;
 		}
-		display();
+		requestAnimationFrame(() => display());
 	});
 
 	player.value.addHandler('onEnded', () => {
@@ -118,29 +149,39 @@ function playPause() {
 	});
 
 	if (player.value.currentPlayingNode === null) {
-		player.value.play(buffer);
-		player.value.seek(position.value);
-		playing.value = true;
+		loading.value = true;
+		player.value.play(buffer).then(() => {
+			player.value.seek(position.value);
+			player.value.repeat(loop.value);
+			playing.value = true;
+			loading.value = false;
+		});
 	} else {
 		player.value.togglePause();
 		playing.value = !player.value.currentPlayingNode.paused;
 	}
 }
 
-function stop(noDisplayUpdate = false) {
+async function stop(noDisplayUpdate = false) {
 	player.value.stop();
 	playing.value = false;
 	if (!noDisplayUpdate) {
 		try {
-			player.value.play(buffer);
-			display();
+			await player.value.play(buffer);
+			display(true);
 		} catch (err) {
 			console.warn(err);
 		}
 	}
 	player.value.stop();
 	position.value = 0;
-	player.value.handlers = [];
+	currentRow = 0;
+	player.value.clearHandlers();
+}
+
+function toggleLoop() {
+	loop.value = loop.value === -1 ? 0 : -1;
+	player.value.repeat(loop.value);
 }
 
 function initSeek() {
@@ -148,122 +189,104 @@ function initSeek() {
 }
 
 function performSeek() {
-	const noNode = !player.value.currentPlayingNode;
-	if (noNode) {
-		player.value.play(buffer);
-	}
 	player.value.seek(position.value);
 	display();
-	if (noNode) {
-		player.value.stop();
-	}
 	isSeeking = false;
 }
 
 function toggleVisible() {
 	hide.value = !hide.value;
-	if (!hide.value && patternHide.value) {
-		firstFrame.value = true;
-		patternHide.value = false;
-	}
 	nextTick(() => { stop(hide.value); });
 }
 
-function togglePattern() {
-	patternHide.value = !patternHide.value;
-	if (!patternHide.value) {
-		if (player.value.getRow() === 0) {
-			try {
-				player.value.play(buffer);
-				display();
-			} catch (err) {
-				console.warn(err);
-			}
-			player.value.stop();
+function isRowActive(i: number) {
+	if (i === currentRow) {
+		if (modPattern.value) {
+			if (rowHeight === 0 && initRow.value) rowHeight = initRow.value[0].getBoundingClientRect().height;
+			modPattern.value.scrollTop = currentRow * rowHeight;
 		}
+		return true;
+	}
+	return false;
+}
+
+function indexText(i: number) {
+	let rowText = i.toString(16);
+	if (rowText.length === 1) {
+		rowText = '0' + rowText;
+	}
+	return rowText;
+}
+
+function getRow(pattern: number, rowOffset: number) {
+	let notes: string[] = [],
+		insts: string[] = [],
+		vols: string[] = [],
+		fxs: string[] = [],
+		ops: string[] = [];
+
+	for (let channel = 0; channel < nbChannels.value; channel++) {
+		const part = player.value.getPatternRowChannel(
+			pattern,
+			rowOffset,
+			channel,
+		);
+
+		notes.push(part.substring(0, 3));
+		insts.push(part.substring(4, 6));
+		vols.push(part.substring(6, 9));
+		fxs.push(part.substring(10, 11));
+		ops.push(part.substring(11, 13));
+	}
+
+	return {
+		notes,
+		insts,
+		vols,
+		fxs,
+		ops,
+	};
+}
+
+function display(reset = false) {
+	if (!patternShow.value) return;
+
+	if (reset) {
+		const pattern = player.value.getPattern();
+		currentPattern.value = pattern;
+	}
+
+	if (patData.value.length === 0) {
+		const nbPatterns = player.value.getNumPatterns();
+		const pattern = player.value.getPattern();
+
+		currentPattern.value = pattern;
+
+		if (player.value.currentPlayingNode) {
+			nbChannels.value = player.value.currentPlayingNode.nbChannels;
+		}
+
+		const patternsArray: ModRow[][] = [];
+
+		for (let patOffset = 0; patOffset < nbPatterns; patOffset++) {
+			const rowsArray: ModRow[] = [];
+			const nbRows = player.value.getPatternNumRows(patOffset);
+			for (let rowOffset = 0; rowOffset < nbRows; rowOffset++) {
+				rowsArray.push(getRow(patOffset, rowOffset));
+			}
+			patternsArray.push(rowsArray);
+		}
+
+		patData.value = Object.freeze(patternsArray);
 	}
 }
 
-function display() {
-	if (!displayCanvas.value) {
-		stop();
-		return;
-	}
-
-	if (patternHide.value) return;
-
-	if (firstFrame.value) {
-		firstFrame.value = false;
-		patternHide.value = true;
-	}
-
-	const canvas = displayCanvas.value;
-
-	const pattern = player.value.getPattern();
-	const row = player.value.getRow();
-	let nbChannels = 0;
-	if (player.value.currentPlayingNode) {
-		nbChannels = player.value.currentPlayingNode.nbChannels;
-	}
-	if (canvas.width !== 12 + 84 * nbChannels + 2) {
-		canvas.width = 12 + 84 * nbChannels + 2;
-		canvas.height = 12 * rowBuffer;
-	}
-	const nbRows = player.value.getPatternNumRows(pattern);
-	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-	ctx.font = '10px monospace';
-	ctx.fillStyle = colours.background;
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	ctx.fillStyle = colours.default.inactive;
-	for (let rowOffset = 0; rowOffset < rowBuffer; rowOffset++) {
-		const rowToDraw = row - rowBuffer / 2 + rowOffset;
-		if (rowToDraw >= 0 && rowToDraw < nbRows) {
-			const active = (rowToDraw === row) ? 'active' : 'inactive';
-			let rowText = parseInt(rowToDraw).toString(16);
-			if (rowText.length === 1) {
-				rowText = '0' + rowText;
-			}
-			ctx.fillStyle = colours.default[active];
-			if (rowToDraw % 4 === 0) {
-				ctx.fillStyle = colours.quarter[active];
-			}
-			ctx.fillText(rowText, 0, 10 + rowOffset * 12);
-			for (let channel = 0; channel < nbChannels; channel++) {
-				const part = player.value.getPatternRowChannel(pattern, rowToDraw, channel);
-				const baseOffset = (2 + (part.length + 1) * channel) * CHAR_WIDTH;
-				const baseRowOffset = ROW_OFFSET_Y + rowOffset * CHAR_HEIGHT;
-
-				ctx.fillStyle = colours.default[active];
-				ctx.fillText('|', baseOffset, baseRowOffset);
-
-				const note = part.substring(0, 3);
-				ctx.fillStyle = colours.default[active];
-				ctx.fillText(note, baseOffset + CHAR_WIDTH, baseRowOffset);
-
-				const instr = part.substring(4, 6);
-				ctx.fillStyle = colours.instr[active];
-				ctx.fillText(instr, baseOffset + CHAR_WIDTH * 5, baseRowOffset);
-
-				const volume = part.substring(6, 9);
-				ctx.fillStyle = colours.volume[active];
-				ctx.fillText(volume, baseOffset + CHAR_WIDTH * 7, baseRowOffset);
-
-				const fx = part.substring(10, 11);
-				ctx.fillStyle = colours.fx[active];
-				ctx.fillText(fx, baseOffset + CHAR_WIDTH * 11, baseRowOffset);
-
-				const op = part.substring(11, 13);
-				ctx.fillStyle = colours.operant[active];
-				ctx.fillText(op, baseOffset + CHAR_WIDTH * 12, baseRowOffset);
-			}
-		}
-	}
-}
-
+onDeactivated(() => {
+	stop();
+});
 </script>
 
-<style lang="scss" scoped>
-
+<style lang="scss" module>
 .hide {
 	border-radius: var(--radius-sm) !important;
 	background-color: black !important;
@@ -271,7 +294,7 @@ function display() {
 	font-size: 12px !important;
 }
 
-.mod-player-enabled {
+.enabled {
 	position: relative;
 	overflow: hidden;
 	display: flex;
@@ -292,34 +315,49 @@ function display() {
 		right: 12px;
 	}
 
-	> .pattern-display {
+	> .patternDisplay {
 		width: 100%;
 		height: 100%;
-		overflow-x: scroll;
-		overflow-y: hidden;
+		overflow: hidden;
+		color: white;
 		background-color: black;
 		text-align: center;
-		.pattern-canvas {
-			background-color: black;
-			height: 100%;
-		}
-		.pattern-hide {
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-			background: rgba(64, 64, 64, 0.3);
-			backdrop-filter: blur(2em);
-			color: #fff;
-			font-size: 12px;
+		font: 12px monospace;
+		white-space: pre;
+		user-select: none;
 
-			position: absolute;
-			z-index: 0;
-			width: 100%;
-			height: 100%;
+		.pattern {
+			display: grid;
+			overflow-y: hidden;
+			height: 0;
+			padding-top: calc((56.25% - 48px) / 2);
+			padding-bottom: calc((56.25% - 48px) / 2);
+			content-visibility: auto;
 
-			> span {
-				display: block;
+			.row {
+				opacity: 0.5;
+
+				&.active {
+					opacity: 1;
+				}
+
+				> .colQuarter {
+					color: var(--badge);
+				}
+
+				> .inner {
+					background: repeating-linear-gradient(
+						to right,
+						var(--fg) 0 4ch,
+						var(--codeBoolean) 4ch 6ch,
+						var(--codeNumber) 6ch 9ch,
+						var(--codeString) 9ch 10ch,
+						var(--error) 10ch 12ch
+					);
+					background-clip: text;
+					-webkit-background-clip: text;
+					-webkit-text-fill-color: transparent;
+				}
 			}
 		}
 	}
@@ -455,7 +493,7 @@ function display() {
 	}
 }
 
-.mod-player-disabled {
+.disabled {
 	display: flex;
 	justify-content: center;
 	align-items: center;
