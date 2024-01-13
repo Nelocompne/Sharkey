@@ -21,7 +21,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<template v-for="media in mediaList.filter(media => previewable(media))">
 				<XVideo v-if="media.type.startsWith('video')" :key="`video:${media.id}`" :class="$style.media" :video="media"/>
 				<XImage v-else-if="media.type.startsWith('image')" :key="`image:${media.id}`" :class="$style.media" class="image" :data-id="media.id" :image="media" :raw="raw"/>
-				<XModPlayer v-else-if="isModule(media)" :key="media.id" :module="media"/>
+				<XModule v-else-if="isModule(media)" :key="`module:${media.id}`" :class="$style.media" :module="media"/>
 			</template>
 		</div>
 	</div>
@@ -37,7 +37,7 @@ import 'photoswipe/style.css';
 import XBanner from '@/components/MkMediaBanner.vue';
 import XImage from '@/components/MkMediaImage.vue';
 import XVideo from '@/components/MkMediaVideo.vue';
-import XModPlayer from '@/components/SkModPlayer.vue';
+import XModule from '@/components/SkMediaModule.vue';
 import * as os from '@/os.js';
 import { FILE_TYPE_BROWSERSAFE, FILE_EXT_TRACKER_MODULES, FILE_TYPE_TRACKER_MODULES } from '@/const.js';
 import { defaultStore } from '@/store.js';

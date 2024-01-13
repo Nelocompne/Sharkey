@@ -1095,6 +1095,7 @@ export interface Locale {
     "reactionsDisplaySize": string;
     "limitWidthOfReaction": string;
     "noteIdOrUrl": string;
+    "module": string;
     "video": string;
     "videos": string;
     "audio": string;

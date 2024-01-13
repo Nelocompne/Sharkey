@@ -1,67 +1,32 @@
 <template>
-<div v-if="!available" :class="$style.disabled">
-	<MkLoading v-if="fetching"/>
-	<MkError v-else-if="error" @retry="load()"/>
-</div>
-<div v-else-if="hide" :class="$style.disabled" @click="toggleVisible()">
-	<div>
-		<b><i class="ph-eye ph-bold ph-lg"></i> {{ i18n.ts.sensitive }}</b>
-		<span>{{ i18n.ts.clickToShow }}</span>
-	</div>
-</div>
-
-<div v-else :class="$style.enabled">
-	<div :class="$style.patternDisplay">
-		<div v-if="patternShow">
-			<div v-if="patData.length !== 0" ref="modPattern" :class="$style.pattern">
-				<span
-					v-for="(row, i) in patData[currentPattern]"
-					ref="initRow"
-					:key="i"
-					:class="[$style.row, { [$style.active]: isRowActive(i) }]"
-				>
-					<span :class="{ [$style.colQuarter]: i % 4 === 0 }">{{ indexText(i) }}</span>
-					<span :class="$style.inner">{{ getRowText(row) }}</span>
-				</span>
-			</div>
-			<MkLoading v-else/>
+<div :class="$style.root">
+	<div v-if="patternShow">
+		<div v-if="patData.length !== 0" ref="modPattern" :class="$style.pattern">
+			<span
+				v-for="(row, i) in patData[currentPattern]"
+				ref="initRow"
+				:key="i"
+				:class="[$style.row, { [$style.active]: isRowActive(i) }]"
+			>
+				<span :class="{ [$style.quarter]: i % 4 === 0 }">{{ indexText(i) }}</span>
+				<span :class="$style.column">{{ getRowText(row) }}</span>
+			</span>
 		</div>
-		<div v-else :class="$style.pattern" @click="showPattern()">
-			<p>{{ i18n.ts.patternHidden }}</p>
-		</div>
+		<MkLoading v-else/>
 	</div>
-	<div :class="$style.controls">
-		<button v-if="!loading" :class="$style.play" @click="playPause()">
-			<i v-if="playing" class="ph-pause ph-bold ph-lg"></i>
-			<i v-else class="ph-play ph-bold ph-lg"></i>
-		</button>
-		<MkLoading v-else :em="true"/>
-		<button :class="$style.stop" @click="stop()">
-			<i class="ph-stop ph-bold ph-lg"></i>
-		</button>
-		<button :class="$style.loop" @click="toggleLoop()">
-			<i v-if="loop" class="ph-repeat ph-bold ph-lg"></i>
-			<i v-else class="ph-repeat-once ph-bold ph-lg"></i>
-		</button>
-		<input ref="progress" v-model="position" :class="$style.progress" type="range" min="0" :max="length" step="0.1" @mousedown="initSeek()" @mouseup="performSeek()"/>
-		<input v-model="player.context.gain.value" type="range" min="0" max="1" step="0.1"/>
-		<a :class="$style.download" :title="i18n.ts.download" :href="module.url" target="_blank">
-			<i class="ph-download ph-bold ph-lg"></i>
-		</a>
+	<div v-else :class="$style.pattern" @click="showPattern()">
+		<p>{{ i18n.ts.patternHidden }}</p>
 	</div>
-	<i :class="$style.hide" class="ph-eye-slash ph-bold ph-lg" @click="toggleVisible()"></i>
 </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, shallowRef, nextTick, onDeactivated, onMounted } from 'vue';
-import * as Misskey from 'misskey-js';
+import { computed, ref, shallowRef, onDeactivated, onMounted, nextTick, watch } from 'vue';
 import { i18n } from '@/i18n.js';
-import { defaultStore } from '@/store.js';
 import { ChiptuneJsPlayer } from '@/scripts/chiptune2.js';
 
 const props = defineProps<{
-	module: Misskey.entities.DriveFile
+	src: string
 }>();
 
 interface ModRow {
@@ -74,11 +39,9 @@ interface ModRow {
 
 const available = ref(false);
 const initRow = shallowRef<HTMLSpanElement>();
-const hide = ref(defaultStore.state.nsfw === 'force' ? true : props.module.isSensitive && defaultStore.state.nsfw !== 'ignore');
 const patternShow = ref(false);
 const playing = ref(false);
 const modPattern = ref<HTMLDivElement>();
-const progress = ref<HTMLProgressElement>();
 const position = ref(0);
 const player = shallowRef(new ChiptuneJsPlayer());
 const patData = shallowRef<readonly ModRow[][]>([]);
@@ -89,15 +52,34 @@ const loop = ref(false);
 const fetching = ref(true);
 const error = ref(false);
 const loading = ref(false);
+const currentRow = ref(0);
 
-let currentRow = 0;
-let rowHeight = 0;
+const volume = computed({
+	get() {
+		return player.value.context.gain.value;
+	},
+
+	set(value) {
+		player.value.context.gain.value = value;
+	},
+});
+
 let buffer: ArrayBuffer|null = null;
+let rowHeight = 0;
 let isSeeking = false;
+
+watch(currentRow, (row) => {
+	if (!modPattern.value) {
+		return;
+	}
+
+	if (rowHeight === 0 && initRow.value) rowHeight = initRow.value[0].getBoundingClientRect().height;
+	modPattern.value.scrollTop = row * rowHeight;
+});
 
 async function load() {
 	try {
-		buffer = await player.value.load(props.module.url);
+		buffer = await player.value.load(props.src);
 		available.value = true;
 		error.value = false;
 		fetching.value = false;
@@ -139,7 +121,7 @@ function playPause() {
 	}
 
 	player.value.addHandler('onRowChange', (i: { index: number }) => {
-		currentRow = i.index;
+		currentRow.value = i.index;
 		currentPattern.value = player.value.getPattern();
 		length.value = player.value.duration();
 		if (!isSeeking) {
@@ -183,7 +165,7 @@ async function stop(noDisplayUpdate = false) {
 	}
 	player.value.stop();
 	position.value = 0;
-	currentRow = 0;
+	currentRow.value = 0;
 	player.value.clearHandlers();
 }
 
@@ -202,21 +184,8 @@ function performSeek() {
 	isSeeking = false;
 }
 
-function toggleVisible() {
-	hide.value = !hide.value;
-	nextTick(() => { stop(hide.value); });
-}
-
 function isRowActive(i: number) {
-	if (i !== currentRow) {
-		return false;
-	}
-
-	if (modPattern.value) {
-		if (rowHeight === 0 && initRow.value) rowHeight = initRow.value[0].getBoundingClientRect().height;
-		modPattern.value.scrollTop = currentRow * rowHeight;
-	}
-	return true;
+	return i === currentRow.value;
 }
 
 function indexText(i: number) {
@@ -254,8 +223,6 @@ function getRow(pattern: number, rowOffset: number): ModRow {
 }
 
 function display(reset = false) {
-	if (!patternShow.value) return;
-
 	if (reset) {
 		currentPattern.value = player.value.getPattern();
 	}
@@ -286,230 +253,67 @@ function display(reset = false) {
 onDeactivated(() => {
 	stop();
 });
+
+defineExpose({
+	initSeek,
+	performSeek,
+	playPause,
+	stop,
+	toggleLoop,
+	length,
+	loading,
+	loop,
+	playing,
+	position,
+	volume,
+});
 </script>
 
 <style lang="scss" module>
-.hide {
-	border-radius: var(--radius-sm) !important;
-	background-color: black !important;
-	color: var(--accentLighten) !important;
-	font-size: 12px !important;
-}
-
-.enabled {
-	position: relative;
+.root {
+	width: 100%;
+	height: 100%;
 	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-
-	> i {
-		display: block;
-		position: absolute;
-		border-radius: var(--radius-sm);
-		background-color: var(--fg);
-		color: var(--accentLighten);
-		font-size: 14px;
-		opacity: .5;
-		padding: 3px 6px;
-		text-align: center;
-		cursor: pointer;
-		top: 12px;
-		right: 12px;
-	}
-
-	> .patternDisplay {
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
-		color: white;
-		background-color: black;
-		text-align: center;
-		font: 12px monospace;
-		white-space: pre;
-		user-select: none;
-
-		.pattern {
-			display: grid;
-			overflow-y: hidden;
-			height: 0;
-			padding-top: calc((56.25% - 48px) / 2);
-			padding-bottom: calc((56.25% - 48px) / 2);
-			content-visibility: auto;
-
-			.row {
-				opacity: 0.5;
-
-				&.active {
-					opacity: 1;
-				}
-
-				> .colQuarter {
-					color: var(--badge);
-				}
-
-				> .inner {
-					background: repeating-linear-gradient(
-						to right,
-						var(--fg) 0 4ch,
-						var(--codeBoolean) 4ch 6ch,
-						var(--codeNumber) 6ch 9ch,
-						var(--codeString) 9ch 10ch,
-						var(--error) 10ch 12ch
-					);
-					background-clip: text;
-					-webkit-background-clip: text;
-					-webkit-text-fill-color: transparent;
-				}
-			}
-		}
-	}
-
-	> .controls {
-		display: flex;
-		width: 100%;
-		background-color: var(--bg);
-		z-index: 1;
-
-		> * {
-			padding: 4px 8px;
-		}
-
-		> button, a {
-			border: none;
-			background-color: transparent;
-			color: var(--accent);
-			cursor: pointer;
-
-			&:hover {
-				background-color: var(--fg);
-			}
-		}
-
-		> input[type=range] {
-			height: 21px;
-			-webkit-appearance: none;
-			width: 90px;
-			padding: 0;
-			margin: 4px 8px;
-			overflow-x: hidden;
-
-			&:focus {
-				outline: none;
-
-				&::-webkit-slider-runnable-track {
-					background: var(--bg);
-				}
-
-				&::-ms-fill-lower, &::-ms-fill-upper {
-					background: var(--bg);
-				}
-			}
-
-			&::-webkit-slider-runnable-track {
-				width: 100%;
-				height: 100%;
-				cursor: pointer;
-				border-radius: 0;
-				animate: 0.2s;
-				background: var(--bg);
-				border: 1px solid var(--fg);
-				overflow-x: hidden;
-			}
-
-			&::-webkit-slider-thumb {
-				border: none;
-				height: 100%;
-				width: 14px;
-				border-radius: 0;
-				background: var(--accentLighten);
-				cursor: pointer;
-				-webkit-appearance: none;
-				box-shadow: calc(-100vw - 14px) 0 0 100vw var(--accent);
-				clip-path: polygon(1px 0, 100% 0, 100% 100%, 1px 100%, 1px calc(50% + 10.5px), -100vw calc(50% + 10.5px), -100vw calc(50% - 10.5px), 0 calc(50% - 10.5px));
-				z-index: 1;
-			}
-
-			&::-moz-range-track {
-				width: 100%;
-				height: 100%;
-				cursor: pointer;
-				border-radius: 0;
-				animate: 0.2s;
-				background: var(--bg);
-				border: 1px solid var(--fg);
-			}
-
-			&::-moz-range-progress {
-				cursor: pointer;
-				height: 100%;
-				background: var(--accent);
-			}
-
-			&::-moz-range-thumb {
-				border: none;
-				height: 100%;
-				border-radius: 0;
-				width: 14px;
-				background: var(--accentLighten);
-				cursor: pointer;
-			}
-
-			&::-ms-track {
-				width: 100%;
-				height: 100%;
-				cursor: pointer;
-				border-radius: 0;
-				animate: 0.2s;
-				background: transparent;
-				border-color: transparent;
-				color: transparent;
-			}
-
-			&::-ms-fill-lower {
-				background: var(--accent);
-				border: 1px solid var(--fg);
-				border-radius: 0;
-			}
-
-			&::-ms-fill-upper {
-				background: var(--bg);
-				border: 1px solid var(--fg);
-				border-radius: 0;
-			}
-
-			&::-ms-thumb {
-				margin-top: 1px;
-				border: none;
-				height: 100%;
-				width: 14px;
-				border-radius: 0;
-				background: var(--accentLighten);
-				cursor: pointer;
-			}
-
-			&.progress {
-				flex-grow: 1;
-				min-width: 0;
-			}
-		}
-	}
+	color: white;
+	background-color: black;
+	text-align: center;
+	font: 12px monospace;
+	white-space: pre;
+	user-select: none;
 }
 
-.disabled {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background: #111;
-	color: #fff;
+.pattern {
+	display: grid;
+	overflow-y: hidden;
+	height: 0;
+	padding-top: calc((56.25% - 48px) / 2);
+	padding-bottom: calc((56.25% - 48px) / 2);
+	content-visibility: auto;
+}
 
-	> div {
-		display: table-cell;
-		text-align: center;
-		font-size: 12px;
+.row {
+	opacity: 0.5;
+}
 
-		> b {
-			display: block;
-		}
-	}
+.active {
+	opacity: 1;
+}
+
+.quarter {
+	color: var(--badge);
+}
+
+.column {
+	background: repeating-linear-gradient(
+		to right,
+		var(--fg) 0 4ch,
+		var(--codeBoolean) 4ch 6ch,
+		var(--codeNumber) 6ch 9ch,
+		var(--codeString) 9ch 10ch,
+		var(--error) 10ch 12ch
+	);
+	background-clip: text;
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
 }
 </style>

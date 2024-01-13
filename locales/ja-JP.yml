@@ -1092,6 +1092,7 @@ showClipButtonInNoteFooter: "ノートのアクションにクリップを追加
 reactionsDisplaySize: "リアクションの表示サイズ"
 limitWidthOfReaction: "リアクションの最大横幅を制限し、縮小して表示する"
 noteIdOrUrl: "ノートIDまたはURL"
+module: "Module" # TODO: translate
 video: "動画"
 videos: "動画"
 audio: "音声"
