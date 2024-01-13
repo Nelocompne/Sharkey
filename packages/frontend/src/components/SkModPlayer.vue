@@ -40,7 +40,7 @@
 			<i class="ph-stop ph-bold ph-lg"></i>
 		</button>
 		<button :class="$style.loop" @click="toggleLoop()">
-			<i v-if="loop === -1" class="ph-repeat ph-bold ph-lg"></i>
+			<i v-if="loop" class="ph-repeat ph-bold ph-lg"></i>
 			<i v-else class="ph-repeat-once ph-bold ph-lg"></i>
 		</button>
 		<input ref="progress" v-model="position" :class="$style.progress" type="range" min="0" :max="length" step="0.1" @mousedown="initSeek()" @mouseup="performSeek()"/>
@@ -58,7 +58,7 @@ import { ref, shallowRef, nextTick, onDeactivated, onMounted } from 'vue';
 import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
 import { defaultStore } from '@/store.js';
-import { ChiptuneJsPlayer, ChiptuneJsConfig } from '@/scripts/chiptune2.js';
+import { ChiptuneJsPlayer } from '@/scripts/chiptune2.js';
 
 const props = defineProps<{
 	module: Misskey.entities.DriveFile
@@ -80,32 +80,32 @@ const playing = ref(false);
 const modPattern = ref<HTMLDivElement>();
 const progress = ref<HTMLProgressElement>();
 const position = ref(0);
-const player = shallowRef(new ChiptuneJsPlayer(new ChiptuneJsConfig()));
-const patData = shallowRef([] as ModRow[][]);
+const player = shallowRef(new ChiptuneJsPlayer());
+const patData = shallowRef<readonly ModRow[][]>([]);
 const currentPattern = ref(0);
 const nbChannels = ref(0);
 const length = ref(1);
-const loop = ref(0);
+const loop = ref(false);
 const fetching = ref(true);
 const error = ref(false);
 const loading = ref(false);
 
 let currentRow = 0;
 let rowHeight = 0;
-let buffer = null;
+let buffer: ArrayBuffer|null = null;
 let isSeeking = false;
 
-function load() {
-	player.value.load(props.module.url).then((result) => {
-		buffer = result;
+async function load() {
+	try {
+		buffer = await player.value.load(props.module.url);
 		available.value = true;
 		error.value = false;
 		fetching.value = false;
-	}).catch((err) => {
+	} catch (err) {
 		console.error(err);
 		error.value = true;
 		fetching.value = false;
-	});
+	}
 }
 
 onMounted(load);
@@ -134,6 +134,10 @@ function getRowText(row: ModRow) {
 }
 
 function playPause() {
+	if (buffer === null) {
+		return;
+	}
+
 	player.value.addHandler('onRowChange', (i: { index: number }) => {
 		currentRow = i.index;
 		currentPattern.value = player.value.getPattern();
@@ -152,7 +156,7 @@ function playPause() {
 		loading.value = true;
 		player.value.play(buffer).then(() => {
 			player.value.seek(position.value);
-			player.value.repeat(loop.value);
+			player.value.repeat(loop.value ? -1 : 0);
 			playing.value = true;
 			loading.value = false;
 		});
@@ -163,6 +167,10 @@ function playPause() {
 }
 
 async function stop(noDisplayUpdate = false) {
+	if (buffer === null) {
+		return;
+	}
+
 	player.value.stop();
 	playing.value = false;
 	if (!noDisplayUpdate) {
@@ -180,8 +188,8 @@ async function stop(noDisplayUpdate = false) {
 }
 
 function toggleLoop() {
-	loop.value = loop.value === -1 ? 0 : -1;
-	player.value.repeat(loop.value);
+	loop.value = !loop.value;
+	player.value.repeat(loop.value ? -1 : 0);
 }
 
 function initSeek() {
@@ -200,30 +208,27 @@ function toggleVisible() {
 }
 
 function isRowActive(i: number) {
-	if (i === currentRow) {
-		if (modPattern.value) {
-			if (rowHeight === 0 && initRow.value) rowHeight = initRow.value[0].getBoundingClientRect().height;
-			modPattern.value.scrollTop = currentRow * rowHeight;
-		}
-		return true;
+	if (i !== currentRow) {
+		return false;
 	}
-	return false;
+
+	if (modPattern.value) {
+		if (rowHeight === 0 && initRow.value) rowHeight = initRow.value[0].getBoundingClientRect().height;
+		modPattern.value.scrollTop = currentRow * rowHeight;
+	}
+	return true;
 }
 
 function indexText(i: number) {
-	let rowText = i.toString(16);
-	if (rowText.length === 1) {
-		rowText = '0' + rowText;
-	}
-	return rowText;
+	return i.toString(16).padStart(2, '0');
 }
 
-function getRow(pattern: number, rowOffset: number) {
-	let notes: string[] = [],
-		insts: string[] = [],
-		vols: string[] = [],
-		fxs: string[] = [],
-		ops: string[] = [];
+function getRow(pattern: number, rowOffset: number): ModRow {
+	const notes: string[] = [];
+	const insts: string[] = [];
+	const vols: string[] = [];
+	const fxs: string[] = [];
+	const ops: string[] = [];
 
 	for (let channel = 0; channel < nbChannels.value; channel++) {
 		const part = player.value.getPatternRowChannel(
@@ -252,15 +257,12 @@ function display(reset = false) {
 	if (!patternShow.value) return;
 
 	if (reset) {
-		const pattern = player.value.getPattern();
-		currentPattern.value = pattern;
+		currentPattern.value = player.value.getPattern();
 	}
 
 	if (patData.value.length === 0) {
 		const nbPatterns = player.value.getNumPatterns();
-		const pattern = player.value.getPattern();
-
-		currentPattern.value = pattern;
+		currentPattern.value = player.value.getPattern();
 
 		if (player.value.currentPlayingNode) {
 			nbChannels.value = player.value.currentPlayingNode.nbChannels;
