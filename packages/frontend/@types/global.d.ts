@@ -16,3 +16,4 @@ declare const _DATA_TRANSFER_DECK_COLUMN_: string;
 
 // for dev-mode
 declare const _LANGS_FULL_: string[][];
+declare const __DIRNAME__: string;

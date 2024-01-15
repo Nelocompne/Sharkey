@@ -55,6 +55,7 @@ const devConfig = {
 	define: {
 		...defaultConfig.define,
 		_LANGS_FULL_: JSON.stringify(Object.entries(locales)),
+		__DIRNAME__: JSON.stringify(__dirname),
 	},
 };
 

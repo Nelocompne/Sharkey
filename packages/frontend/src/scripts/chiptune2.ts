@@ -233,7 +233,14 @@ export class ChiptuneJsPlayer {
 	async createLibopenmptNode(buffer: ArrayBuffer) {
 		if (!this.libopenmpt) {
 			const libopenmpt = await import('libopenmpt-wasm');
-			this.libopenmpt = await libopenmpt.default();
+			this.libopenmpt = await libopenmpt.default( _DEV_ ? {
+				// hack to make libopenmpt load in dev mode
+				locateFile(file) {
+					const url = new URL(window.location.href);
+					url.pathname = `/@fs/${__DIRNAME__}/node_modules/libopenmpt-wasm/${file}`;
+					return url.href;
+				},
+			} : {});
 		}
 
 		return new ChiptuneProcessorNode(this, buffer);
