@@ -1,6 +1,6 @@
 <template>
 <div :class="$style.root">
-	<div v-if="patternShow">
+	<div v-if="patternVisible">
 		<div v-if="patData.length !== 0" ref="modPattern" :class="$style.pattern">
 			<span
 				v-for="(row, i) in patData[currentPattern]"
@@ -14,8 +14,9 @@
 		</div>
 		<MkLoading v-else/>
 	</div>
-	<div v-else :class="$style.pattern" @click="showPattern()">
+	<div v-else :class="$style.pattern">
 		<p>{{ i18n.ts.patternHidden }}</p>
+		<p v-if="alt">{{ alt }}</p>
 	</div>
 </div>
 </template>
@@ -26,7 +27,8 @@ import { i18n } from '@/i18n.js';
 import { ChiptuneJsPlayer } from '@/scripts/chiptune2.js';
 
 const props = defineProps<{
-	src: string
+	src: string,
+	alt: string | null,
 }>();
 
 interface ModRow {
@@ -39,7 +41,7 @@ interface ModRow {
 
 const available = ref(false);
 const initRow = shallowRef<HTMLSpanElement>();
-const patternShow = ref(false);
+const patternVisible = ref(false);
 const playing = ref(false);
 const modPattern = ref<HTMLDivElement>();
 const position = ref(0);
@@ -47,7 +49,7 @@ const player = shallowRef(new ChiptuneJsPlayer());
 const patData = shallowRef<readonly ModRow[][]>([]);
 const currentPattern = ref(0);
 const nbChannels = ref(0);
-const length = ref(1);
+const duration = ref(1);
 const loop = ref(false);
 const fetching = ref(true);
 const error = ref(false);
@@ -66,7 +68,6 @@ const volume = computed({
 
 let buffer: ArrayBuffer|null = null;
 let rowHeight = 0;
-let isSeeking = false;
 
 watch(currentRow, (row) => {
 	if (!modPattern.value) {
@@ -88,12 +89,24 @@ async function load() {
 		error.value = true;
 		fetching.value = false;
 	}
+
+	player.value.addHandler('onRowChange', (i: { index: number }) => {
+		currentRow.value = i.index;
+		currentPattern.value = player.value.getPattern();
+		duration.value = player.value.duration();
+		position.value = player.value.position() % duration.value;
+		requestAnimationFrame(() => display());
+	});
+
+	player.value.addHandler('onEnded', () => {
+		stop();
+	});
 }
 
 onMounted(load);
 
 function showPattern() {
-	patternShow.value = !patternShow.value;
+	patternVisible.value = !patternVisible.value;
 	nextTick(() => {
 		if (playing.value) display();
 		else stop();
@@ -119,20 +132,6 @@ function playPause() {
 	if (buffer === null) {
 		return;
 	}
-
-	player.value.addHandler('onRowChange', (i: { index: number }) => {
-		currentRow.value = i.index;
-		currentPattern.value = player.value.getPattern();
-		length.value = player.value.duration();
-		if (!isSeeking) {
-			position.value = player.value.position() % length.value;
-		}
-		requestAnimationFrame(() => display());
-	});
-
-	player.value.addHandler('onEnded', () => {
-		stop();
-	});
 
 	if (player.value.currentPlayingNode === null) {
 		loading.value = true;
@@ -166,7 +165,6 @@ async function stop(noDisplayUpdate = false) {
 	player.value.stop();
 	position.value = 0;
 	currentRow.value = 0;
-	player.value.clearHandlers();
 }
 
 function toggleLoop() {
@@ -174,14 +172,9 @@ function toggleLoop() {
 	player.value.repeat(loop.value ? -1 : 0);
 }
 
-function initSeek() {
-	isSeeking = true;
-}
-
 function performSeek() {
 	player.value.seek(position.value);
 	display();
-	isSeeking = false;
 }
 
 function isRowActive(i: number) {
@@ -255,17 +248,18 @@ onDeactivated(() => {
 });
 
 defineExpose({
-	initSeek,
 	performSeek,
 	playPause,
 	stop,
 	toggleLoop,
-	length,
+	showPattern,
+	duration,
 	loading,
 	loop,
 	playing,
 	position,
 	volume,
+	patternVisible,
 });
 </script>
 

@@ -4,71 +4,262 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div v-if="hide" :class="[$style.hidden, (module.isSensitive && defaultStore.state.highlightSensitiveMedia) && $style.sensitiveContainer]" @click="hide = false">
-	<!-- 【注意】dataSaverMode が有効になっている際には、hide が false になるまでサムネイルや動画を読み込まないようにすること -->
-	<div :class="$style.sensitive">
-		<b v-if="module.isSensitive" style="display: block;"><i class="ph-warning ph-bold ph-lg"></i> {{ i18n.ts.sensitive }}{{ defaultStore.state.dataSaver.media ? ` (${i18n.ts.module}${module.size ? ' ' + bytes(module.size) : ''})` : '' }}</b>
-		<b v-else style="display: block;"><i class="ph-music-notes ph-bold ph-lg"></i> {{ defaultStore.state.dataSaver.media && module.size ? bytes(module.size) : i18n.ts.module }}</b>
-		<span>{{ i18n.ts.clickToShow }}</span>
+<div
+	ref="playerEl"
+	:class="[
+		$style.moduleContainer,
+		controlsShowing && $style.active,
+		(module.isSensitive && defaultStore.state.highlightSensitiveMedia) && $style.sensitive,
+	]"
+	@mouseover="onMouseOver"
+	@mouseleave="onMouseLeave"
+	@contextmenu.stop
+>
+	<button v-if="hide" :class="$style.hidden" @click="hide = false">
+		<div :class="$style.hiddenTextWrapper">
+			<b v-if="module.isSensitive" style="display: block;"><i class="ph-warning ph-bold ph-lg"></i> {{ i18n.ts.sensitive }}{{ defaultStore.state.dataSaver.media ? ` (${i18n.ts.module}${module.size ? ' ' + bytes(module.size) : ''})` : '' }}</b>
+			<b v-else style="display: block;"><i class="ph-film-strip ph-bold ph-lg"></i> {{ defaultStore.state.dataSaver.media && module.size ? bytes(module.size) : i18n.ts.module }}</b>
+			<span style="display: block;">{{ i18n.ts.clickToShow }}</span>
+		</div>
+	</button>
+	<div v-else :class="$style.moduleRoot" @click.self="showPattern">
+		<SkModPlayer
+			ref="moduleEl"
+			:class="$style.module"
+			:src="module.url"
+			:alt="module.comment"
+		/>
+		<button v-if="isReady && !isPlaying" class="_button" :class="$style.moduleOverlayPlayButton" @click="togglePlayPause"><i class="ph-play ph-bold ph-lg"></i></button>
+		<i class="ti ti-eye-off" :class="$style.hide" @click="hide = true"></i>
+		<div :class="$style.indicators">
+			<div v-if="module.comment" :class="$style.indicator">ALT</div>
+			<div v-if="module.isSensitive" :class="$style.indicator" style="color: var(--warn);" :title="i18n.ts.sensitive"><i class="ph-warning ph-bold ph-lg"></i></div>
+		</div>
+		<div :class="$style.moduleControls" @click.self="showPattern">
+			<div :class="[$style.controlsChild, $style.controlsLeft]">
+				<button class="_button" :class="$style.controlButton" @click="togglePlayPause">
+					<i v-if="isPlaying" class="ph-pause ph-bold ph-lg"></i>
+					<i v-else class="ph-play ph-bold ph-lg"></i>
+				</button>
+			</div>
+			<div :class="[$style.controlsChild, $style.controlsRight]">
+				<button class="_button" :class="$style.controlButton" @click="showMenu">
+					<i class="ph-settings ph-bold ph-lg"></i>
+				</button>
+			</div>
+			<div :class="[$style.controlsChild, $style.controlsTime]">{{ hms(elapsedTimeMs, {}) }}</div>
+			<div :class="[$style.controlsChild, $style.controlsVolume]">
+				<button class="_button" :class="$style.controlButton" @click="toggleMute">
+					<i v-if="volume === 0" class="ph-speaker-x ph-bold ph-lg"></i>
+					<i v-else class="ph-speaker-high ph-bold ph-lg"></i>
+				</button>
+				<MkMediaRange
+					v-model="volume"
+					:sliderBgWhite="true"
+					:class="$style.volumeSeekbar"
+				/>
+			</div>
+			<MkMediaRange
+				v-model="rangePercent"
+				:sliderBgWhite="true"
+				:class="$style.seekbarRoot"
+			/>
+		</div>
 	</div>
-</div>
-<div v-else :class="[$style.visible, (module.isSensitive && defaultStore.state.highlightSensitiveMedia) && $style.sensitiveContainer]">
-	<SkModPlayer ref="moduleEl" :src="module.url"/>
-	<div v-if="moduleEl" :class="$style.controls">
-		<button v-if="!moduleEl.loading" @click="moduleEl.playPause()">
-			<i v-if="moduleEl.playing" class="ph-pause ph-bold ph-lg"></i>
-			<i v-else class="ph-play ph-bold ph-lg"></i>
-		</button>
-		<MkLoading v-else :em="true"/>
-		<button @click="moduleEl.stop()">
-			<i class="ph-stop ph-bold ph-lg"></i>
-		</button>
-		<button @click="moduleEl.toggleLoop()">
-			<i v-if="moduleEl.loop" class="ph-repeat ph-bold ph-lg"></i>
-			<i v-else class="ph-repeat-once ph-bold ph-lg"></i>
-		</button>
-		<input ref="progress" v-model="moduleEl.position" :class="$style.progress" type="range" min="0" :max="moduleEl.length" step="0.1" @mousedown="moduleEl.initSeek()" @mouseup="moduleEl.performSeek()"/>
-		<input v-model="moduleEl.volume" type="range" min="0" max="1" step="0.1"/>
-		<a :title="i18n.ts.download" :href="module.url" target="_blank">
-			<i class="ph-download ph-bold ph-lg"></i>
-		</a>
-	</div>
-	<i class="ph-eye-slash ph-bold ph-lg" :class="$style.hide" @click="hide = true"></i>
 </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, shallowRef, watch } from 'vue';
+import { ref, shallowRef, computed, watch, onDeactivated, onActivated, onMounted } from 'vue';
 import * as Misskey from 'misskey-js';
+import type { MenuItem } from '@/types/menu.js';
 import bytes from '@/filters/bytes.js';
-import SkModPlayer from '@/components/SkModPlayer.vue';
+import { hms } from '@/filters/hms.js';
 import { defaultStore } from '@/store.js';
 import { i18n } from '@/i18n.js';
+import * as os from '@/os.js';
+import MkMediaRange from '@/components/MkMediaRange.vue';
+import SkModPlayer from '@/components/SkModPlayer.vue';
+import { iAmModerator } from '@/account.js';
 
 const props = defineProps<{
 	module: Misskey.entities.DriveFile;
 }>();
 
+// eslint-disable-next-line vue/no-setup-props-destructure
 const hide = ref((defaultStore.state.nsfw === 'force' || defaultStore.state.dataSaver.media) ? true : (props.module.isSensitive && defaultStore.state.nsfw !== 'ignore'));
 
-const moduleEl = shallowRef<typeof SkModPlayer>();
+// Menu
+const menuShowing = ref(false);
 
-watch(moduleEl, () => {
-	if (moduleEl.value) {
-		moduleEl.value.volume.value = 0.3;
+function showMenu(ev: MouseEvent) {
+	let menu: MenuItem[] = [];
+
+	menu = [
+		// TODO: 再生キューに追加
+		{
+			text: i18n.ts.hide,
+			icon: 'ti ti-eye-off',
+			action: () => {
+				hide.value = true;
+			},
+		},
+	];
+
+	if (iAmModerator) {
+		menu.push({
+			type: 'divider',
+		}, {
+			text: props.module.isSensitive ? i18n.ts.unmarkAsSensitive : i18n.ts.markAsSensitive,
+			icon: props.module.isSensitive ? 'ti ti-eye' : 'ti ti-eye-exclamation',
+			danger: true,
+			action: () => toggleSensitive(props.module),
+		});
 	}
+
+	menuShowing.value = true;
+	os.popupMenu(menu, ev.currentTarget ?? ev.target, {
+		align: 'right',
+		onClosing: () => {
+			menuShowing.value = false;
+		},
+	});
+}
+
+function toggleSensitive(file: Misskey.entities.DriveFile) {
+	os.apiWithDialog('drive/files/update', {
+		fileId: file.id,
+		isSensitive: !file.isSensitive,
+	});
+}
+
+// MediaControl: Module State
+const moduleEl = shallowRef<typeof SkModPlayer>();
+const playerEl = shallowRef<HTMLDivElement>();
+const isHoverring = ref(false);
+const controlsShowing = computed(() => {
+	if (!oncePlayed.value) return true;
+	if (isHoverring.value) return true;
+	if (menuShowing.value) return true;
+	return false;
+});
+let controlStateTimer: string | number;
+
+// MediaControl: Common State
+const oncePlayed = ref(false);
+const isReady = ref(false);
+const isPlaying = computed(() => moduleEl.value?.playing ?? false);
+const elapsedTimeMs = ref(0);
+const rangePercent = computed({
+	get: () => {
+		if (!moduleEl.value) return 0;
+		return moduleEl.value.position / moduleEl.value.duration;
+	},
+	set: (to) => {
+		if (!moduleEl.value) return;
+		moduleEl.value.position = to * moduleEl.value.duration;
+		moduleEl.value.performSeek();
+	},
+});
+const volume = ref(.5);
+
+// MediaControl Events
+function onMouseOver() {
+	if (controlStateTimer) {
+		clearTimeout(controlStateTimer);
+	}
+	isHoverring.value = true;
+}
+
+function onMouseLeave() {
+	controlStateTimer = window.setTimeout(() => {
+		isHoverring.value = false;
+	}, 100);
+}
+
+function showPattern() {
+	if (!isReady.value || !moduleEl.value) return;
+
+	if (moduleEl.value.patternVisible) {
+		togglePlayPause();
+	} else {
+		moduleEl.value.showPattern();
+	}
+}
+
+function togglePlayPause() {
+	if (!isReady.value || !moduleEl.value) return;
+
+	moduleEl.value.playPause();
+	if (!isPlaying.value) {
+		oncePlayed.value = true;
+	}
+}
+
+function toggleMute() {
+	if (volume.value === 0) {
+		volume.value = .5;
+	} else {
+		volume.value = 0;
+	}
+}
+
+let onceInit = false;
+let stopModuleElWatch: () => void;
+
+function init() {
+	if (onceInit) return;
+	onceInit = true;
+
+	stopModuleElWatch = watch(moduleEl, () => {
+		if (moduleEl.value) {
+			isReady.value = true;
+
+			function updateMediaTick() {
+				if (moduleEl.value) {
+					elapsedTimeMs.value = moduleEl.value.position * 1000;
+				}
+				window.requestAnimationFrame(updateMediaTick);
+			}
+
+			updateMediaTick();
+
+			moduleEl.value.volume = volume.value;
+		}
+	}, {
+		immediate: true,
+	});
+}
+
+watch(volume, (to) => {
+	if (moduleEl.value) moduleEl.value.volume = to;
+});
+
+onMounted(() => {
+	init();
+});
+
+onActivated(() => {
+	init();
+});
+
+onDeactivated(() => {
+	isReady.value = false;
+	elapsedTimeMs.value = 0;
+	hide.value = (defaultStore.state.nsfw === 'force' || defaultStore.state.dataSaver.media) ? true : (props.module.isSensitive && defaultStore.state.nsfw !== 'ignore');
+	stopModuleElWatch();
+	onceInit = false;
 });
 </script>
 
 <style lang="scss" module>
-.visible {
+.moduleContainer {
+	container-type: inline-size;
 	position: relative;
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
+	overflow: clip;
 }
 
-.sensitiveContainer {
+.sensitive {
 	position: relative;
 
 	&::after {
@@ -84,15 +275,36 @@ watch(moduleEl, () => {
 	}
 }
 
+.indicators {
+	display: inline-flex;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	pointer-events: none;
+	opacity: .5;
+	gap: 6px;
+}
+
+.indicator {
+	/* Hardcode to black because either --bg or --fg makes it hard to read in dark/light mode */
+	background-color: black;
+	border-radius: 6px;
+	color: var(--accentLighten);
+	display: inline-block;
+	font-weight: bold;
+	font-size: 0.8em;
+	padding: 2px 5px;
+}
+
 .hide {
 	display: block;
 	position: absolute;
 	border-radius: var(--radius-sm);
 	background-color: black;
 	color: var(--accentLighten);
-	font-size: 14px;
+	font-size: 12px;
 	opacity: .5;
-	padding: 3px 6px;
+	padding: 5px 8px;
 	text-align: center;
 	cursor: pointer;
 	top: 12px;
@@ -100,146 +312,179 @@ watch(moduleEl, () => {
 }
 
 .hidden {
+	width: 100%;
+	background: none;
+	border: none;
+	outline: none;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+	padding: 120px 0;
 	display: flex;
-	justify-content: center;
 	align-items: center;
-	background: #111;
+	justify-content: center;
+	background: #000;
+}
+
+.hiddenTextWrapper {
+	text-align: center;
+	font-size: 0.8em;
 	color: #fff;
 }
 
-.sensitive {
-	display: table-cell;
-	text-align: center;
-	font-size: 12px;
+.moduleRoot {
+	background: #000;
+	position: relative;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 
-.controls {
-	display: flex;
+.module {
+	display: block;
+	height: 100%;
 	width: 100%;
-	background-color: var(--bg);
-	z-index: 1;
+}
 
-	> * {
-		padding: 4px 8px;
+.moduleOverlayPlayButton {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+
+	opacity: 0;
+	transition: opacity .4s ease-in-out;
+
+	background: var(--accent);
+	color: #fff;
+	padding: 1rem;
+	border-radius: 99rem;
+
+	font-size: 1.1rem;
+}
+
+.moduleLoading {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.moduleControls {
+	display: grid;
+	grid-template-areas:
+		"left time . volume right"
+		"seekbar seekbar seekbar seekbar seekbar";
+	grid-template-columns: auto auto 1fr auto auto;
+	align-items: center;
+	gap: 4px 8px;
+	pointer-events: none;
+
+	padding: 35px 10px 10px 10px;
+	background: linear-gradient(rgba(0, 0, 0, 0),rgba(0, 0, 0, .75));
+
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+
+	transform: translateY(100%);
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity .4s ease-in-out, transform .4s ease-in-out;
+}
+
+.active {
+	.moduleControls {
+		transform: translateY(0);
+		opacity: 1;
+		pointer-events: auto;
 	}
 
-	> button, a {
-		border: none;
-		background-color: transparent;
-		color: var(--accent);
-		cursor: pointer;
+	.moduleOverlayPlayButton {
+		opacity: 1;
+	}
+}
+
+.controlsChild {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	color: #fff;
+
+	.controlButton {
+		padding: 6px;
+		border-radius: calc(var(--radius) / 2);
+		transition: background-color .2s ease-in-out;
+		font-size: 1.05rem;
 
 		&:hover {
-			background-color: var(--fg);
+			background-color: var(--accent);
 		}
 	}
+}
 
-	> input[type=range] {
-		height: 21px;
-		-webkit-appearance: none;
-		width: 90px;
-		padding: 0;
-		margin: 4px 8px;
-		overflow-x: hidden;
+.controlsLeft {
+	grid-area: left;
+}
 
-		&:focus {
-			outline: none;
+.controlsRight {
+	grid-area: right;
+}
 
-			&::-webkit-slider-runnable-track {
-				background: var(--bg);
-			}
+.controlsTime {
+	grid-area: time;
+	font-size: .9rem;
+}
 
-			&::-ms-fill-lower, &::-ms-fill-upper {
-				background: var(--bg);
-			}
-		}
+.controlsVolume {
+	grid-area: volume;
 
-		&::-webkit-slider-runnable-track {
-			width: 100%;
-			height: 100%;
-			cursor: pointer;
-			border-radius: 0;
-			animate: 0.2s;
-			background: var(--bg);
-			border: 1px solid var(--fg);
-			overflow-x: hidden;
-		}
+	.volumeSeekbar {
+		display: none;
+	}
+}
 
-		&::-webkit-slider-thumb {
-			border: none;
-			height: 100%;
-			width: 14px;
-			border-radius: 0;
-			background: var(--accentLighten);
-			cursor: pointer;
-			-webkit-appearance: none;
-			box-shadow: calc(-100vw - 14px) 0 0 100vw var(--accent);
-			clip-path: polygon(1px 0, 100% 0, 100% 100%, 1px 100%, 1px calc(50% + 10.5px), -100vw calc(50% + 10.5px), -100vw calc(50% - 10.5px), 0 calc(50% - 10.5px));
-			z-index: 1;
-		}
+.seekbarRoot {
+	grid-area: seekbar;
+}
 
-		&::-moz-range-track {
-			width: 100%;
-			height: 100%;
-			cursor: pointer;
-			border-radius: 0;
-			animate: 0.2s;
-			background: var(--bg);
-			border: 1px solid var(--fg);
-		}
+@container (min-width: 500px) {
+	.moduleControls {
+		grid-template-areas: "left seekbar time volume right";
+		grid-template-columns: auto 1fr auto auto auto;
+	}
 
-		&::-moz-range-progress {
-			cursor: pointer;
-			height: 100%;
-			background: var(--accent);
-		}
-
-		&::-moz-range-thumb {
-			border: none;
-			height: 100%;
-			border-radius: 0;
-			width: 14px;
-			background: var(--accentLighten);
-			cursor: pointer;
-		}
-
-		&::-ms-track {
-			width: 100%;
-			height: 100%;
-			cursor: pointer;
-			border-radius: 0;
-			animate: 0.2s;
-			background: transparent;
-			border-color: transparent;
-			color: transparent;
-		}
-
-		&::-ms-fill-lower {
-			background: var(--accent);
-			border: 1px solid var(--fg);
-			border-radius: 0;
-		}
-
-		&::-ms-fill-upper {
-			background: var(--bg);
-			border: 1px solid var(--fg);
-			border-radius: 0;
-		}
-
-		&::-ms-thumb {
-			margin-top: 1px;
-			border: none;
-			height: 100%;
-			width: 14px;
-			border-radius: 0;
-			background: var(--accentLighten);
-			cursor: pointer;
-		}
-
-		&.progress {
+	.controlsVolume {
+		.volumeSeekbar {
+			max-width: 90px;
+			display: block;
 			flex-grow: 1;
-			min-width: 0;
 		}
 	}
+}
+.indicators {
+	display: inline-flex;
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	pointer-events: none;
+	opacity: .5;
+	gap: 6px;
+}
+
+.indicator {
+	/* Hardcode to black because either --bg or --fg makes it hard to read in dark/light mode */
+	background-color: black;
+	border-radius: var(--radius-sm);
+	color: var(--accentLighten);
+	display: inline-block;
+	font-weight: bold;
+	font-size: 0.8em;
+	padding: 2px 5px;
 }
 </style>
