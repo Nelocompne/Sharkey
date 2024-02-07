@@ -1,4 +1,3 @@
----
 _lang_: "Tiếng Nhật"
 headlineMisskey: "Mạng xã hội liên hợp"
 introMisskey: "Xin chào! Misskey là một nền tảng tiểu blog phi tập trung mã nguồn mở.\nViết \"tút\" để chia sẻ những suy nghĩ của bạn 📡\nBằng \"biểu cảm\", bạn có thể bày tỏ nhanh chóng cảm xúc của bạn với các tút 👍\nHãy khám phá một thế giới mới! 🚀"
@@ -364,17 +363,14 @@ pinnedPages: "Trang đã ghim"
 pinnedPagesDescription: "Liệt kê các trang thú vị để ghim trên máy chủ."
 pinnedClipId: "ID của clip muốn ghim"
 pinnedNotes: "Bài viết đã ghim"
-hcaptcha: "hCaptcha"
 enableHcaptcha: "Bật hCaptcha"
 hcaptchaSiteKey: "Khóa của trang"
 hcaptchaSecretKey: "Khóa bí mật"
 mcaptchaSiteKey: "Khóa của trang"
 mcaptchaSecretKey: "Khóa bí mật"
-recaptcha: "reCAPTCHA"
 enableRecaptcha: "Bật reCAPTCHA"
 recaptchaSiteKey: "Khóa của trang"
 recaptchaSecretKey: "Khóa bí mật"
-turnstile: "Turnstile"
 enableTurnstile: "Áp dụng Turnstile"
 turnstileSiteKey: "Khóa của trang"
 turnstileSecretKey: "Khóa bí mật"
@@ -509,9 +505,7 @@ hideThisNote: "Ẩn tút này"
 showFeaturedNotesInTimeline: "Hiện tút nổi bật trong bảng tin"
 objectStorage: "Đối tượng lưu trữ"
 useObjectStorage: "Dùng đối tượng lưu trữ"
-objectStorageBaseUrl: "Base URL"
 objectStorageBaseUrlDesc: "URL được sử dụng làm tham khảo. Chỉ định URL của CDN hoặc Proxy của bạn nếu bạn đang sử dụng. Với S3 dùng 'https://<bucket>.s3.amazonaws.com', còn GCS hoặc dịch vụ tương tự dùng 'https://storage.googleapis.com/<bucket>', etc."
-objectStorageBucket: "Bucket"
 objectStorageBucketDesc: "Nhập tên bucket dùng ở nhà cung cấp của bạn."
 objectStoragePrefix: "Tiền tố"
 objectStoragePrefixDesc: "Các tập tin sẽ được lưu trữ trong các thư mục có tiền tố này."
@@ -1085,7 +1079,6 @@ _achievements:
   earnedAt: "Ngày thu nhận"
   _types:
     _notes1:
-      title: "just setting up my shonk"
       description: "Lần đầu tiên đăng bài"
       flavor: "Chúc bạn trên Miskey vui vẻ nha!!"
     _notes10:
@@ -1119,7 +1112,6 @@ _achievements:
       title: "Hàng tinh đăng bài"
       description: "Đã đăng bài 50,000 lần rồi"
     _notes100000:
-      title: "ALL YOUR NOTE ARE BELONG TO US"
       description: "Đăng 100,000 tút"
       flavor: "Liệu viết bài gì tầm này vậy? "
     _login3:
@@ -1602,7 +1594,6 @@ _widgets:
   jobQueue: "Công việc chờ xử lý"
   serverMetric: "Thống kê máy chủ"
   aiscript: "AiScript console"
-  aiscriptApp: "AiScript App"
   aichan: "Ai"
   userList: "Danh sách người dùng"
   _userList:
