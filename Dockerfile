@@ -56,6 +56,7 @@ COPY --link ["packages/backend/package.json", "./packages/backend/"]
 COPY --link ["packages/misskey-js/package.json", "./packages/misskey-js/"]
 COPY --link ["packages/misskey-reversi/package.json", "./packages/misskey-reversi/"]
 COPY --link ["packages/misskey-bubble-game/package.json", "./packages/misskey-bubble-game/"]
+COPY --link ["packages/megalodon/package.json", "./packages/megalodon/"]
 
 ARG NODE_ENV=production
 
@@ -94,6 +95,7 @@ COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/misskey-bub
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/built ./packages/backend/built
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/fluent-emojis /misskey/fluent-emojis
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/megalodon/node_modules ./packages/megalodon/node_modules
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/megalodon/built ./packages/megalodon/built
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/misskey-js/built ./packages/misskey-js/built
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/tossface-emojis/dist ./tossface-emojis/dist
 
