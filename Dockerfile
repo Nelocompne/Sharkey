@@ -1,18 +1,18 @@
-# syntax=docker/dockerfile:1.4
+# syntax = docker/dockerfile:1.4
 
 ARG NODE_VERSION=20.11.1-bullseye
 
-# Build assets and compile TypeScript
+# build assets & compile TypeScript
 
 FROM --platform=$BUILDPLATFORM node:${NODE_VERSION} AS native-builder
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-  --mount=type=cache,target=/var/lib/apt,sharing=locked \
-  rm -f /etc/apt/apt.conf.d/docker-clean \
-  ; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
-  && apt-get update \
-  && apt-get install -yqq --no-install-recommends \
-  build-essential
+	--mount=type=cache,target=/var/lib/apt,sharing=locked \
+	rm -f /etc/apt/apt.conf.d/docker-clean \
+	; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
+	&& apt-get update \
+	&& apt-get install -yqq --no-install-recommends \
+	build-essential
 
 RUN corepack enable
 
@@ -31,21 +31,21 @@ COPY --link ["packages/misskey-bubble-game/package.json", "./packages/misskey-bu
 ARG NODE_ENV=production
 
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
-  pnpm install --aggregate-output --frozen-lockfile
+	pnpm i --frozen-lockfile --aggregate-output
 
 COPY --link . ./
 
 RUN git submodule update --init
-RUN pnpm run build
+RUN pnpm build
 RUN rm -rf .git/
 
-# Build native dependencies for the target platform
+# build native dependencies for target platform
 
 FROM --platform=$TARGETPLATFORM node:${NODE_VERSION} AS target-builder
 
 RUN apt-get update \
-  && apt-get install -yqq --no-install-recommends \
-  build-essential
+	&& apt-get install -yqq --no-install-recommends \
+	build-essential
 
 RUN corepack enable
 
@@ -62,24 +62,24 @@ COPY --link ["packages/misskey-bubble-game/package.json", "./packages/misskey-bu
 ARG NODE_ENV=production
 
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
-  pnpm install --aggregate-output --frozen-lockfile
+	pnpm i --frozen-lockfile --aggregate-output
 
 FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-slim AS runner
 
-ARG GID="991"
 ARG UID="991"
+ARG GID="991"
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-  ffmpeg tini curl libjemalloc-dev libjemalloc2 \
-  && ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc2.so.2 /usr/local/lib/libjemalloc.so \
-  && corepack enable \
-  && groupadd -g "${GID}" sharkey \
-  && useradd -l -u "${UID}" -g "${GID}" -m -d /sharkey sharkey \
-  && find / -type d -path /sys -prune -o -type d -path /proc -prune -o -type f -perm /u+s -ignore_readdir_race -exec chmod u-s {} \; \
-  && find / -type d -path /sys -prune -o -type d -path /proc -prune -o -type f -perm /g+s -ignore_readdir_race -exec chmod g-s {} \; \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists
+	&& apt-get install -y --no-install-recommends \
+	ffmpeg tini curl libjemalloc-dev libjemalloc2 \
+	&& ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc2.so.2 /usr/local/lib/libjemalloc.so \
+	&& corepack enable \
+	&& groupadd -g "${GID}" sharkey \
+	&& useradd -l -u "${UID}" -g "${GID}" -m -d /sharkey sharkey \
+	&& find / -type d -path /sys -prune -o -type d -path /proc -prune -o -type f -perm /u+s -ignore_readdir_race -exec chmod u-s {} \; \
+	&& find / -type d -path /sys -prune -o -type d -path /proc -prune -o -type f -perm /g+s -ignore_readdir_race -exec chmod g-s {} \; \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists
 
 USER sharkey
 WORKDIR /sharkey
@@ -102,7 +102,6 @@ COPY --chown=sharkey:sharkey . ./
 
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 ENV NODE_ENV=production
-
 HEALTHCHECK --interval=5s --retries=20 CMD ["/bin/bash", "/sharkey/healthcheck.sh"]
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["pnpm", "run", "migrateandstart"]
