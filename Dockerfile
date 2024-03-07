@@ -62,7 +62,9 @@ ARG NODE_ENV=production
 
 RUN node scripts/trim-deps.mjs
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
-	pnpm i --aggregate-output
+	pnpm prune
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
+	pnpm i --frozen-lockfile --aggregate-output
 
 FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-slim AS runner
 
