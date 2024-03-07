@@ -60,8 +60,9 @@ COPY --link ["packages/misskey-bubble-game/package.json", "./packages/misskey-bu
 
 ARG NODE_ENV=production
 
+RUN node scripts/trim-deps.mjs
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
-	pnpm i --frozen-lockfile --aggregate-output
+	pnpm i --aggregate-output
 
 FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-slim AS runner
 
