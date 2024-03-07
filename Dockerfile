@@ -28,8 +28,6 @@ COPY --link ["packages/megalodon/package.json", "./packages/megalodon/"]
 COPY --link ["packages/misskey-reversi/package.json", "./packages/misskey-reversi/"]
 COPY --link ["packages/misskey-bubble-game/package.json", "./packages/misskey-bubble-game/"]
 
-ARG NODE_ENV=production
-
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 	pnpm i --frozen-lockfile --aggregate-output
 
@@ -37,6 +35,7 @@ COPY --link . ./
 
 RUN git submodule update --init
 RUN pnpm build
+RUN mv ./packages/frontend/assets ./sharkey-assets
 RUN rm -rf .git/
 
 # build native dependencies for target platform
@@ -98,7 +97,19 @@ COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/misskey-bub
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/built ./packages/backend/built
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/fluent-emojis /sharkey/fluent-emojis
 COPY --chown=sharkey:sharkey --from=native-builder /sharkey/tossface-emojis /sharkey/tossface-emojis
-COPY --chown=sharkey:sharkey . ./
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/package.json ./package.json
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/package.json ./packages/backend/package.json
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/check_connect.js ./packages/backend/check_connect.js
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/ormconfig.js ./packages/backend/ormconfig.js
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/migration ./packages/backend/migration
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/backend/assets ./packages/backend/assets
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/sharkey-assets ./packages/frontend/assets
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/megalodon/package.json ./packages/megalodon/package.json
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/misskey-js/package.json ./packages/misskey-js/package.json
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/misskey-reversi/package.json ./packages/misskey-reversi/package.json
+COPY --chown=sharkey:sharkey --from=native-builder /sharkey/packages/misskey-bubble-game/package.json ./packages/misskey-bubble-game/package.json
+
 
 ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
 ENV NODE_ENV=production
