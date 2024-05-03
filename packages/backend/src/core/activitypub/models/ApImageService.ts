@@ -48,21 +48,20 @@ export class ApImageService {
 		}
 
 		const image = await this.apResolverService.createResolver().resolve(value);
-		const imageUrl = image.url ?? image.href;
 
-		if (imageUrl == null) {
+		if (image.url == null) {
 			throw new Error('invalid image: url not provided');
 		}
 
-		if (typeof imageUrl !== 'string') {
-			throw new Error('invalid image: unexpected type of url: ' + JSON.stringify(imageUrl, null, 2));
+		if (typeof image.url !== 'string') {
+			throw new Error('invalid image: unexpected type of url: ' + JSON.stringify(image.url, null, 2));
 		}
 
-		if (!checkHttps(imageUrl)) {
-			throw new Error('invalid image: unexpected schema of url: ' + imageUrl);
+		if (!checkHttps(image.url)) {
+			throw new Error('invalid image: unexpected schema of url: ' + image.url);
 		}
 
-		this.logger.info(`Creating the Image: ${imageUrl}`);
+		this.logger.info(`Creating the Image: ${image.url}`);
 
 		const instance = await this.metaService.fetch();
 
@@ -78,17 +77,17 @@ export class ApImageService {
 		});
 
 		const file = await this.driveService.uploadFromUrl({
-			url: imageUrl,
+			url: image.url,
 			user: actor,
-			uri: imageUrl,
+			uri: image.url,
 			sensitive: image.sensitive,
 			isLink: !shouldBeCached,
 			comment: truncate(image.name ?? undefined, DB_MAX_IMAGE_COMMENT_LENGTH),
 		});
-		if (!file.isLink || file.url === imageUrl) return file;
+		if (!file.isLink || file.url === image.url) return file;
 
 		// URLが異なっている場合、同じ画像が以前に異なるURLで登録されていたということなので、URLを更新する
-		await this.driveFilesRepository.update({ id: file.id }, { url: imageUrl, uri: imageUrl });
+		await this.driveFilesRepository.update({ id: file.id }, { url: image.url, uri: image.url });
 		return await this.driveFilesRepository.findOneByOrFail({ id: file.id });
 	}
 

@@ -441,15 +441,20 @@ export class ApNoteService {
 		}
 
 		// 添付ファイル
-		// TODO: attachmentは必ずしもImageではない
-		// TODO: attachmentは必ずしも配列ではない
+		const attachments = toArray(note.attachment);
+		if (note.image)
+			attachments.push(note.image);
+		
 		const limit = promiseLimit<MiDriveFile>(2);
-		const files = (await Promise.all(toArray(note.attachment).map(attach => (
-			limit(() => this.apImageService.resolveImage(actor, {
-				...attach,
-				sensitive: note.sensitive, // Noteがsensitiveなら添付もsensitiveにする
-			}))
-		))));
+		const filePromises = attachments
+			.filter(attach => toArray(attach.type)?.includes('Image'))
+			.map(attach => (
+				limit(() => this.apImageService.resolveImage(actor, {
+					...attach,
+					sensitive: note.sensitive, // Noteがsensitiveなら添付もsensitiveにする
+				}))
+			));
+		const files = await Promise.all(filePromises);
 
 		// リプライ
 		const reply: MiNote | null = note.inReplyTo
