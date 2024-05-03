@@ -214,15 +214,7 @@ export class ApNoteService {
 		}
 
 		// 添付ファイル
-		// TODO: attachmentは必ずしもImageではない
-		// TODO: attachmentは必ずしも配列ではない
-		const limit = promiseLimit<MiDriveFile>(2);
-		const files = (await Promise.all(toArray(note.attachment).map(attach => (
-			limit(() => this.apImageService.resolveImage(actor, {
-				...attach,
-				sensitive: note.sensitive, // Noteがsensitiveなら添付もsensitiveにする
-			}))
-		))));
+		const files = await this.getNoteFiles(note, actor);
 
 		// リプライ
 		const reply: MiNote | null = note.inReplyTo
@@ -441,21 +433,7 @@ export class ApNoteService {
 		}
 
 		// 添付ファイル
-		const attachments = toArray(note.attachment);
-		if (note.image)
-			for (const image of toArray(note.image))
-				attachments.push(image);
-
-		const limit = promiseLimit<MiDriveFile>(2);
-		const filePromises = attachments
-			.filter(attach => typeof(attach.url) === 'string')
-			.map(attach => (
-				limit(() => this.apImageService.resolveImage(actor, {
-					...attach,
-					sensitive: note.sensitive, // Noteがsensitiveなら添付もsensitiveにする
-				}))
-			));
-		const files = await Promise.all(filePromises);
+		const files = await this.getNoteFiles(note, actor);
 
 		// リプライ
 		const reply: MiNote | null = note.inReplyTo
@@ -564,6 +542,28 @@ export class ApNoteService {
 			}
 			return duplicate;
 		}
+	}
+
+	/**
+	 * Downloads all attachments from the note.
+	 */
+	private async getNoteFiles(note: IPost, actor: MiRemoteUser): Promise<MiDriveFile[]> {
+		const attachments = toArray(note.attachment);
+		if (note.image)
+			for (const image of toArray(note.image))
+				attachments.push(image);
+
+		const limit = promiseLimit<MiDriveFile>(2);
+		const filePromises = attachments
+			.filter(attach => typeof (attach.url) === 'string')
+			.map(attach => (
+				limit(() => this.apImageService.resolveImage(actor, {
+					...attach,
+					sensitive: note.sensitive, // Noteがsensitiveなら添付もsensitiveにする
+				}))
+			));
+
+		return await Promise.all(filePromises);
 	}
 
 	/**
