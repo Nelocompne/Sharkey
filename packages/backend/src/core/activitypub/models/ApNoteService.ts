@@ -448,7 +448,7 @@ export class ApNoteService {
 
 		const limit = promiseLimit<MiDriveFile>(2);
 		const filePromises = attachments
-			.filter(attach => toArray(attach.type).includes('Image'))
+			.filter(attach => typeof(attach.url) === 'string')
 			.map(attach => (
 				limit(() => this.apImageService.resolveImage(actor, {
 					...attach,
