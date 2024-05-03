@@ -443,11 +443,12 @@ export class ApNoteService {
 		// 添付ファイル
 		const attachments = toArray(note.attachment);
 		if (note.image)
-			attachments.push(note.image);
-		
+			for (const image of toArray(note.image))
+				attachments.push(image);
+
 		const limit = promiseLimit<MiDriveFile>(2);
 		const filePromises = attachments
-			.filter(attach => toArray(attach.type)?.includes('Image'))
+			.filter(attach => toArray(attach.type).includes('Image'))
 			.map(attach => (
 				limit(() => this.apImageService.resolveImage(actor, {
 					...attach,
