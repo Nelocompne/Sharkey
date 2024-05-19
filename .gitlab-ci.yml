@@ -85,6 +85,8 @@ buildDocker:
     - stable
     - develop
     - tags
+    - live-testing
+
 
 mergeManifests:
   stage: deploy
