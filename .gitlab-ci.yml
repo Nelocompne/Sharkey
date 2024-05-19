@@ -45,7 +45,7 @@ getImageTag:
       elif test "$CI_COMMIT_BRANCH" == "develop"; then
         tag="develop"
       elif test "$CI_COMMIT_BRANCH" == "live-testing"; then
-        tag="live-testing"
+        tag="live-testing-DONOTUSE"
       else
         tag="$CI_COMMIT_BRANCH"
       fi
