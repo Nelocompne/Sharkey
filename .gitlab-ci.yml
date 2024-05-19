@@ -30,6 +30,7 @@ testCommit:
     - develop
     - merge_requests
     - stable
+    - live-testing
 
 getImageTag:
   stage: deploy
@@ -43,6 +44,8 @@ getImageTag:
         tag="latest"
       elif test "$CI_COMMIT_BRANCH" == "develop"; then
         tag="develop"
+      elif test "$CI_COMMIT_BRANCH" == "live-testing"; then
+        tag="live-testing"
       else
         tag="$CI_COMMIT_BRANCH"
       fi
@@ -56,6 +59,7 @@ getImageTag:
     - stable
     - develop
     - tags
+    - live-testing
 
 buildDocker:
   stage: deploy
@@ -108,3 +112,4 @@ mergeManifests:
     - stable
     - develop
     - tags
+    - live-testing
