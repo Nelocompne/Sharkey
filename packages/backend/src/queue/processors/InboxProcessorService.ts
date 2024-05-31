@@ -160,6 +160,7 @@ export class InboxProcessorService {
 				}
 				// TODO: 元のアクティビティと非互換な形に正規化される場合は転送をスキップする
 				// https://github.com/mastodon/mastodon/blob/664b0ca/app/services/activitypub/process_collection_service.rb#L24-L29
+				// @ts-expect-error TS(2739) - dakkar 2024-05-31 REMOVE THIS LINE once 2024.5 misskey is merged, they fixed the types
 				activity.signature = ldSignature;
 
 				// もう一度actorチェック
