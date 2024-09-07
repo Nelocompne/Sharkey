@@ -61,11 +61,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				}
 			});
 
-			const stripe = new Stripe(this.config.stripeAgeCheck.key);
-
 			if (userProfile == null) {
 				throw new ApiError(meta.errors.userIsDeleted);
-			}
+			};
+
+			const stripe = new Stripe(this.config.stripeAgeCheck.key);
 
 			const verificationSession = await stripe.identity.verificationSessions.create({
 				type: 'document',

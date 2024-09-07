@@ -32,7 +32,6 @@ export class StripeHookServerService {
 
 		private loggerService: LoggerService,
 	) {
-		//this.createServer = this.createServer.bind(this);
 		this.logger = this.loggerService.getLogger('stripe', 'gray');
 	}
 
@@ -43,22 +42,22 @@ export class StripeHookServerService {
 	) {
 		if (!this.config.stripeAgeCheck.enabled) return reply.code(400);
 
-		const stripe = new Stripe(this.config.stripeAgeCheck.key);
-
 		if (request.rawBody == null) {
 			// Bad request
 			reply.code(400);
 			return;
 		}
 
-		const body = request.rawBody;
-
-		const headers = request.headers;
-
 		function error(status: number, error: { id: string }) {
 			reply.code(status);
 			return { error };
 		}
+
+		const stripe = new Stripe(this.config.stripeAgeCheck.key);
+
+		const body = request.rawBody;
+
+		const headers = request.headers;
 
 		let event;
 
@@ -68,9 +67,8 @@ export class StripeHookServerService {
 			event = stripe.webhooks.constructEvent(body, sig, this.config.stripeAgeCheck.hookKey);
 		} catch (err: any) {
 			// On error, log and return the error message
-			console.log(`❌ Error message: ${err.message}`);
-			reply.code(400)
-			return `Webhook Error: ${err.message}`;
+			this.logger.error(`❌ Stripe Error`, err);
+			return reply.code(400).send(`Webhook Error: ${err.message}`);
 		}
 
 		// Successfully constructed event
@@ -104,7 +102,7 @@ export class StripeHookServerService {
 			}
 		}
 
-		reply.code(200)
+		reply.code(200);
 		return { received: true };
 		
 		// never get here

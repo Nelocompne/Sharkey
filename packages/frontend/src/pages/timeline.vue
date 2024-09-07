@@ -72,7 +72,7 @@ const withRenotes = computed<boolean>({
 });
 
 if ($i && $i.idCheckRequired) {
-	const { dispose } = os.popup(defineAsyncComponent(() => import('@/components/SkConfirmIdDialog.vue')), {
+	const { dispose } = os.popup(defineAsyncComponent(() => import('@/components/SkStripeIdDialog.vue')), {
 	}, {
 		closed: () => dispose(),
 	});
