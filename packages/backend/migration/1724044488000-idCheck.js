@@ -9,6 +9,8 @@ export class idCheck1724044488000 {
     async up(queryRunner) {
         await queryRunner.query(`ALTER TABLE "user" ADD "idCheckRequired" boolean NOT NULL DEFAULT false`);
         await queryRunner.query(`ALTER TABLE "user" ADD "idVerified" boolean NOT NULL DEFAULT false`);
+        await queryRunner.query(`UPDATE "user" SET "idVerified" = true WHERE "usernameLower" = 'instance.actor' AND "idVerified" = false`);
+        await queryRunner.query(`UPDATE "user" SET "idVerified" = true WHERE "usernameLower" = 'relay.actor' AND "idVerified" = false`);
     }
 
     async down(queryRunner) {
