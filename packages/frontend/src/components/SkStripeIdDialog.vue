@@ -73,8 +73,6 @@ const emit = defineEmits<{
 }>();
 
 async function startCheck() {
-	// Fail safe as it seems Misskey's frontend tends to not update the $i properly so on first reload the dialog may pop up again if reloaded too fast.
-	if ($i && !$i.idCheckRequired) dialog.value?.close();
 	await misskeyApi('stripe/create-verify-session').then(res => {
 		url.value = res.url;
 		page.value = page.value + 1;
