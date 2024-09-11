@@ -316,6 +316,10 @@ export const packedMetaDetailedOnlySchema = {
 					type: 'boolean',
 					optional: false, nullable: false,
 				},
+				idRequired: {
+					type: 'boolean',
+					optional: false, nullable: false,
+				},
 				miauth: {
 					type: 'boolean',
 					optional: true, nullable: false,

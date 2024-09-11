@@ -7,6 +7,7 @@ import { App, AsyncComponentLoader, defineAsyncComponent, provide } from 'vue';
 import type { RouteDef } from '@/nirax.js';
 import { IRouter, Router } from '@/nirax.js';
 import { $i, iAmModerator } from '@/account.js';
+import { fetchInstance } from '@/instance.js';
 import MkLoading from '@/pages/_loading_.vue';
 import MkError from '@/pages/_error_.vue';
 import { setMainRouter } from '@/router/main.js';
@@ -16,6 +17,8 @@ const page = (loader: AsyncComponentLoader<any>) => defineAsyncComponent({
 	loadingComponent: MkLoading,
 	errorComponent: MkError,
 });
+
+const instanceMeta = await fetchInstance();
 
 const routes: RouteDef[] = [{
 	path: '/@:initUser/pages/:initPageName/view-source',
@@ -52,7 +55,7 @@ const routes: RouteDef[] = [{
 	path: '/settings',
 	component: page(() => import('@/pages/settings/index.vue')),
 	loginRequired: true,
-	idRequired: true,
+	idRequired: $i && $i.idCheckRequired ? true : false,
 	children: [{
 		path: '/profile',
 		name: 'profile',
@@ -218,7 +221,6 @@ const routes: RouteDef[] = [{
 	path: '/theme-editor',
 	component: page(() => import('@/pages/theme-editor.vue')),
 	loginRequired: true,
-	idRequired: true,
 }, {
 	path: '/roles/:role',
 	component: page(() => import('@/pages/role.vue')),
@@ -255,17 +257,14 @@ const routes: RouteDef[] = [{
 	path: '/lookup',
 	component: page(() => import('@/pages/lookup.vue')),
 	loginRequired: true,
-	idRequired: true,
 }, {
 	path: '/share',
 	component: page(() => import('@/pages/share.vue')),
 	loginRequired: true,
-	idRequired: true,
 }, {
 	path: '/api-console',
 	component: page(() => import('@/pages/api-console.vue')),
 	loginRequired: true,
-	idRequired: true,
 }, {
 	path: '/scratchpad',
 	component: page(() => import('@/pages/scratchpad.vue')),
@@ -340,11 +339,11 @@ const routes: RouteDef[] = [{
 }, {
 	path: '/channels/:channelId',
 	component: page(() => import('@/pages/channel.vue')),
-	idRequired: true,
+	idRequired: $i && $i.idCheckRequired || !$i && instanceMeta.features.idRequired ? true : false,
 }, {
 	path: '/channels',
 	component: page(() => import('@/pages/channels.vue')),
-	idRequired: true,
+	idRequired: $i && $i.idCheckRequired || !$i && instanceMeta.features.idRequired ? true : false,
 }, {
 	path: '/custom-emojis-manager',
 	component: page(() => import('@/pages/custom-emojis-manager.vue')),
@@ -566,12 +565,12 @@ const routes: RouteDef[] = [{
 	path: '/timeline/list/:listId',
 	component: page(() => import('@/pages/user-list-timeline.vue')),
 	loginRequired: true,
-	idRequired: true,
+	idRequired: $i && $i.idCheckRequired || !$i && instanceMeta.features.idRequired ? true : false,
 }, {
 	path: '/timeline/antenna/:antennaId',
 	component: page(() => import('@/pages/antenna-timeline.vue')),
 	loginRequired: true,
-	idRequired: true,
+	idRequired: $i && $i.idCheckRequired || !$i && instanceMeta.features.idRequired  ? true : false,
 }, {
 	path: '/clicker',
 	component: page(() => import('@/pages/clicker.vue')),
@@ -595,7 +594,7 @@ const routes: RouteDef[] = [{
 }, {
 	path: '/timeline',
 	component: page(() => import('@/pages/timeline.vue')),
-	idRequired: true,
+	idRequired: $i && $i.idCheckRequired || !$i && instanceMeta.features.idRequired ? true : false,
 }, {
 	name: 'index',
 	path: '/',
@@ -613,7 +612,7 @@ const routes: RouteDef[] = [{
 }];
 
 function createRouterImpl(path: string): IRouter {
-	return new Router(routes, path, !!$i, $i?.idCheckRequired!, page(() => import('@/pages/not-found.vue')));
+	return new Router(routes, path, !!$i, $i?.idCheckRequired! || !$i && instanceMeta.features.idRequired, page(() => import('@/pages/not-found.vue')));
 }
 
 /**

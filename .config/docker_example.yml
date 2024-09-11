@@ -300,6 +300,7 @@ checkActivityPubGetSignature: false
 # Stripe identity for ID verification
 stripeAgeCheck:
   enabled: false
+  required: false
   key: sk_
   hookKey: whsec_
 

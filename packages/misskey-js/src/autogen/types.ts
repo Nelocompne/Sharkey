@@ -5117,6 +5117,7 @@ export type components = {
         recaptcha: boolean;
         objectStorage: boolean;
         serviceWorker: boolean;
+        idRequired: boolean;
         /** @default true */
         miauth?: boolean;
       };

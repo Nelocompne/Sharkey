@@ -222,10 +222,12 @@ checkActivityPubGetSignature: false
 #  downloadTimeout: 30
 #  maxFileSize: 262144000
 
-# enable stripe identity for ID verification
-# stripeVerify: true
-# stripeKey: sk_
-# stripeHookKey: whsec_
+# Stripe identity for ID verification
+stripeAgeCheck:
+  enabled: false
+  required: false
+  key: sk_
+  hookKey: whsec_
 
 # Upload or download file size limits (bytes)
 #maxFileSize: 262144000
