@@ -52,6 +52,7 @@ const routes: RouteDef[] = [{
 	path: '/settings',
 	component: page(() => import('@/pages/settings/index.vue')),
 	loginRequired: true,
+	idRequired: true,
 	children: [{
 		path: '/profile',
 		name: 'profile',
@@ -217,6 +218,7 @@ const routes: RouteDef[] = [{
 	path: '/theme-editor',
 	component: page(() => import('@/pages/theme-editor.vue')),
 	loginRequired: true,
+	idRequired: true,
 }, {
 	path: '/roles/:role',
 	component: page(() => import('@/pages/role.vue')),
@@ -253,14 +255,17 @@ const routes: RouteDef[] = [{
 	path: '/lookup',
 	component: page(() => import('@/pages/lookup.vue')),
 	loginRequired: true,
+	idRequired: true,
 }, {
 	path: '/share',
 	component: page(() => import('@/pages/share.vue')),
 	loginRequired: true,
+	idRequired: true,
 }, {
 	path: '/api-console',
 	component: page(() => import('@/pages/api-console.vue')),
 	loginRequired: true,
+	idRequired: true,
 }, {
 	path: '/scratchpad',
 	component: page(() => import('@/pages/scratchpad.vue')),
@@ -335,9 +340,11 @@ const routes: RouteDef[] = [{
 }, {
 	path: '/channels/:channelId',
 	component: page(() => import('@/pages/channel.vue')),
+	idRequired: true,
 }, {
 	path: '/channels',
 	component: page(() => import('@/pages/channels.vue')),
+	idRequired: true,
 }, {
 	path: '/custom-emojis-manager',
 	component: page(() => import('@/pages/custom-emojis-manager.vue')),
@@ -559,10 +566,12 @@ const routes: RouteDef[] = [{
 	path: '/timeline/list/:listId',
 	component: page(() => import('@/pages/user-list-timeline.vue')),
 	loginRequired: true,
+	idRequired: true,
 }, {
 	path: '/timeline/antenna/:antennaId',
 	component: page(() => import('@/pages/antenna-timeline.vue')),
 	loginRequired: true,
+	idRequired: true,
 }, {
 	path: '/clicker',
 	component: page(() => import('@/pages/clicker.vue')),
@@ -586,11 +595,13 @@ const routes: RouteDef[] = [{
 }, {
 	path: '/timeline',
 	component: page(() => import('@/pages/timeline.vue')),
+	idRequired: true,
 }, {
 	name: 'index',
 	path: '/',
 	component: $i ? page(() => import('@/pages/timeline.vue')) : page(() => import('@/pages/welcome.vue')),
 	globalCacheKey: 'index',
+	idRequired: $i && $i.idCheckRequired ? true : false,
 }, {
 	// テスト用リダイレクト設定。ログイン中ユーザのプロフィールにリダイレクトする
 	path: '/redirect-test',
@@ -602,7 +613,7 @@ const routes: RouteDef[] = [{
 }];
 
 function createRouterImpl(path: string): IRouter {
-	return new Router(routes, path, !!$i, page(() => import('@/pages/not-found.vue')));
+	return new Router(routes, path, !!$i, $i?.idCheckRequired!, page(() => import('@/pages/not-found.vue')));
 }
 
 /**

@@ -62,7 +62,7 @@ import { misskeyApi } from '@/scripts/misskey-api.js';
 import MkModalWindow from '@/components/MkModalWindow.vue';
 import MkButton from '@/components/MkButton.vue';
 import { i18n } from '@/i18n.js';
-import { $i } from '@/account.js';
+import { $i, updateAccount } from '@/account.js';
 
 const dialog = shallowRef<InstanceType<typeof MkModalWindow>>();
 const url = ref('');
@@ -89,8 +89,7 @@ function openCheck() {
 async function confirmFinish() {
 	await misskeyApi('i').then(res => {
 		if (!res.idCheckRequired && $i) {
-			$i.idCheckRequired = res.idCheckRequired;
-			$i.idVerified = res.idVerified;
+			updateAccount({ idCheckRequired: res.idCheckRequired, idVerified: res.idVerified });
 			dialog.value?.close();
 		}
 	})
