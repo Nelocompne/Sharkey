@@ -23,6 +23,7 @@ import UsersChart from '@/core/chart/charts/users.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { UserService } from '@/core/UserService.js';
+import type { Config } from '@/config.js';
 
 @Injectable()
 export class SignupService {
@@ -35,6 +36,9 @@ export class SignupService {
 
 		@Inject(DI.usedUsernamesRepository)
 		private usedUsernamesRepository: UsedUsernamesRepository,
+
+		@Inject(DI.config)
+		private config: Config,
 
 		private utilityService: UtilityService,
 		private userService: UserService,
@@ -136,6 +140,7 @@ export class SignupService {
 				token: secret,
 				isRoot: isTheFirstUser,
 				approved: defaultApproval,
+				idCheckRequired: this.config.stripeAgeCheck.required && this.config.stripeAgeCheck.enabled ? true : false,
 				signupReason: reason,
 			}));
 
