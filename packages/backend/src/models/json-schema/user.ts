@@ -455,11 +455,11 @@ export const packedUserDetailedNotMeOnlySchema = {
 		},
 		idCheckRequired: {
 			type: 'boolean',
-			nullable: true, optional: true
+			nullable: false, optional: false
 		},
 		idVerified: {
 			type: 'boolean',
-			nullable: true, optional: true
+			nullable: false, optional: false
 		},
 		//#endregion
 	},

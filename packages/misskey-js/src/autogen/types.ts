@@ -3930,8 +3930,8 @@ export type components = {
       /** @enum {string} */
       notify?: 'normal' | 'none';
       withReplies?: boolean;
-      idCheckRequired?: boolean | null;
-      idVerified?: boolean | null;
+      idCheckRequired: boolean;
+      idVerified: boolean;
     };
     MeDetailedOnly: {
       /** Format: id */
