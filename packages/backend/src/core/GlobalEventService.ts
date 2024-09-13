@@ -166,6 +166,10 @@ export interface AdminEventTypes {
 		reporterId: MiUser['id'],
 		comment: string;
 	};
+	failedIdCheck: {
+		userId: MiUser['id'],
+		comment: string;
+	};
 }
 
 export interface ReversiEventTypes {

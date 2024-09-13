@@ -220,6 +220,10 @@ export type Channels = {
 				targetUserId: string;
 				reporterId: string;
 				comment: string;
+			};
+			failedIdCheck: {
+				userId: string;
+				comment: string;
 			}
 		};
 		receives: null;

@@ -600,7 +600,7 @@ const routes: RouteDef[] = [{
 	path: '/',
 	component: $i ? page(() => import('@/pages/timeline.vue')) : page(() => import('@/pages/welcome.vue')),
 	globalCacheKey: 'index',
-	idRequired: $i && $i.idCheckRequired ? true : false,
+	idRequired: $i && $i.idCheckRequired || $i && !$i.idVerified && instanceMeta.features.idRequired ? true : false,
 }, {
 	// テスト用リダイレクト設定。ログイン中ユーザのプロフィールにリダイレクトする
 	path: '/redirect-test',
@@ -612,7 +612,7 @@ const routes: RouteDef[] = [{
 }];
 
 function createRouterImpl(path: string): IRouter {
-	return new Router(routes, path, !!$i, $i?.idCheckRequired! || !$i && instanceMeta.features.idRequired, page(() => import('@/pages/not-found.vue')));
+	return new Router(routes, path, !!$i, $i?.idCheckRequired! || !$i && instanceMeta.features.idRequired || $i && !$i.idVerified && instanceMeta.features.idRequired, page(() => import('@/pages/not-found.vue')));
 }
 
 /**

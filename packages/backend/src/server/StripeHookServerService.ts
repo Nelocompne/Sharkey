@@ -7,6 +7,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { IsNull } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type {
+	UserProfilesRepository,
 	UsersRepository,
 } from '@/models/_.js';
 import type { Config } from '@/config.js';
@@ -18,6 +19,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOption
 import Stripe from 'stripe';
 import type Logger from '@/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
+import { RoleService } from '@/core/RoleService.js';
+import { GlobalEventService } from '@/core/GlobalEventService.js';
 
 @Injectable()
 export class StripeHookServerService {
@@ -30,7 +33,12 @@ export class StripeHookServerService {
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
 
+		@Inject(DI.userProfilesRepository)
+		private userProfilesRepository: UserProfilesRepository,
+
 		private loggerService: LoggerService,
+		private globalEventService: GlobalEventService,
+		private roleService: RoleService,
 	) {
 		this.logger = this.loggerService.getLogger('stripe', 'gray');
 	}
@@ -97,6 +105,48 @@ export class StripeHookServerService {
 				this.logger.succ(`${user.username} has succesfully approved their ID via Session ${verificationSession.id}`);
 
 				await this.usersRepository.update(user.id, { idCheckRequired: false, idVerified: true });
+
+				break;
+			}
+			case 'identity.verification_session.requires_input': {
+				// Verification failed for some reason
+				const verificationSession = event.data.object;
+
+				const user = await this.usersRepository.findOneBy({
+					id: verificationSession.metadata.user_id,
+					host: IsNull(),
+				}) as MiLocalUser;
+		
+				if (user == null) {
+					return error(404, {
+						id: '6cc579cc-885d-43d8-95c2-b8c7fc963280',
+					});
+				}
+		
+				if (user.isSuspended) {
+					return error(403, {
+						id: 'e03a5f46-d309-4865-9b69-56282d94e1eb',
+					});
+				}
+
+				this.logger.succ(`${user.username} has failed ID Verification via Session ${verificationSession.id}`);
+
+				await this.usersRepository.update(user.id, { idCheckRequired: false });
+
+				await this.userProfilesRepository.update(user.id, { moderationNote: 'ADM/IDFAIL: Possibly underage' });
+
+				const moderatorIds = await this.roleService.getModeratorIds(true, true);
+
+				for (const moderatorId of moderatorIds) {
+					this.globalEventService.publishAdminStream(
+						moderatorId,
+						'failedIdCheck',
+						{
+							userId: user.id,
+							comment: 'ID Check Failed',
+						},
+					);
+				}
 
 				break;
 			}

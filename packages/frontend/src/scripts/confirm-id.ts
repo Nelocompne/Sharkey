@@ -24,7 +24,7 @@ export function confirmId(path?: string) {
 		return new Error('User Account required for id verification');
 	};
 
-	if ($i && !$i.idCheckRequired) return;
+	if ($i && $i.idVerified) return;
 
 	const { dispose } = popup(defineAsyncComponent(() => import('@/components/SkStripeIdDialog.vue')), {
 	}, {
