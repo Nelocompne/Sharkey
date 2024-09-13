@@ -278,7 +278,7 @@ export const packedMetaDetailedOnlySchema = {
 	properties: {
 		features: {
 			type: 'object',
-			optional: true, nullable: false,
+			optional: false, nullable: false,
 			properties: {
 				registration: {
 					type: 'boolean',

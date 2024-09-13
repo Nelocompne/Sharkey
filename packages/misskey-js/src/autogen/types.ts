@@ -5118,7 +5118,7 @@ export type components = {
       noteSearchableScope: 'local' | 'global';
     };
     MetaDetailedOnly: {
-      features?: {
+      features: {
         registration: boolean;
         emailRequiredForSignup: boolean;
         localTimeline: boolean;
