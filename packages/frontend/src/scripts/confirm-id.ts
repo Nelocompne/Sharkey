@@ -22,14 +22,14 @@ export function confirmId(path?: string) {
 			closed: () => dispose(),
 		});
 		return new Error('User Account required for id verification');
-	};
+	}
 
 	if ($i && $i.idVerified) return;
 
 	const { dispose } = popup(defineAsyncComponent(() => import('@/components/SkStripeIdDialog.vue')), {
 	}, {
 		closed: () => {
-			dispose()
+			dispose();
 			if (path) {
 				window.location.href = path;
 			}

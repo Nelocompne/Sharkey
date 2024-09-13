@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<MkModalWindow ref="dialog" :width="500" :height="550" :with-close-button="false" @closed="emit('closed')">
+<MkModalWindow ref="dialog" :width="500" :height="550" :with-close-button=false @closed="emit('closed')">
 	<template #header>
 		<i class="ph-warning-circle ph-bold ph-lg" style="margin-right: 0.5em;"></i>
 		<b>Confirm your Identity</b>
@@ -76,7 +76,7 @@ async function startCheck() {
 	await misskeyApi('stripe/create-verify-session').then(res => {
 		url.value = res.url;
 		page.value = page.value + 1;
-	})
+	});
 }
 
 function openCheck() {
@@ -90,7 +90,7 @@ async function confirmFinish() {
 			updateAccount({ idCheckRequired: res.idCheckRequired, idVerified: res.idVerified });
 			dialog.value?.close();
 		}
-	})
+	});
 }
 </script>
 

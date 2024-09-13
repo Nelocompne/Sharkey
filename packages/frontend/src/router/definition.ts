@@ -568,7 +568,7 @@ const routes: RouteDef[] = [{
 	path: '/timeline/antenna/:antennaId',
 	component: page(() => import('@/pages/antenna-timeline.vue')),
 	loginRequired: true,
-	idRequired: $i && $i.idCheckRequired || !$i && idRequired  ? true : false,
+	idRequired: $i && $i.idCheckRequired || !$i && idRequired ? true : false,
 }, {
 	path: '/clicker',
 	component: page(() => import('@/pages/clicker.vue')),
