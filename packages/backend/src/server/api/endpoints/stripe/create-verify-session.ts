@@ -69,7 +69,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (userProfile == null) {
 				throw new ApiError(meta.errors.userIsDeleted);
-			};
+			}
 
 			const stripe = new Stripe(this.config.stripeAgeCheck.key);
 
