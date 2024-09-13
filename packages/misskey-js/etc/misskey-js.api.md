@@ -783,10 +783,10 @@ export type Channels = {
                 reporterId: string;
                 comment: string;
             };
-			failedIdCheck: {
-				userId: string;
-				comment: string;
-			};
+            failedIdCheck: {
+                userId: string;
+                comment: string;
+            };
         };
         receives: null;
     };
