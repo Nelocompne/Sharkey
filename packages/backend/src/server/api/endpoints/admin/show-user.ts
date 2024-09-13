@@ -172,6 +172,14 @@ export const meta = {
 					},
 				},
 			},
+			idVerified: {
+				type: 'boolean',
+				optional: false, nullable: false,
+			},
+			idCheckRequired: {
+				type: 'boolean',
+				optional: false, nullable: false,
+			},
 		},
 	},
 } as const;
@@ -253,6 +261,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					expiresAt: a.expiresAt ? a.expiresAt.toISOString() : null,
 					roleId: a.roleId,
 				})),
+				idVerified: user.idVerified,
+				idCheckRequired: user.idCheckRequired,
 			};
 		});
 	}

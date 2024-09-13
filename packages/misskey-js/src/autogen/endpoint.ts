@@ -101,6 +101,7 @@ import type {
 	AdminUpdateMetaRequest,
 	AdminDeleteAccountRequest,
 	AdminUpdateUserNoteRequest,
+	AdminPromptIdCheckRequest,
 	AdminRolesCreateRequest,
 	AdminRolesCreateResponse,
 	AdminRolesDeleteRequest,
@@ -667,6 +668,7 @@ export type Endpoints = {
 	'admin/update-meta': { req: AdminUpdateMetaRequest; res: EmptyResponse };
 	'admin/delete-account': { req: AdminDeleteAccountRequest; res: EmptyResponse };
 	'admin/update-user-note': { req: AdminUpdateUserNoteRequest; res: EmptyResponse };
+	'admin/prompt-id-check': { req: AdminPromptIdCheckRequest; res: EmptyResponse };
 	'admin/roles/create': { req: AdminRolesCreateRequest; res: AdminRolesCreateResponse };
 	'admin/roles/delete': { req: AdminRolesDeleteRequest; res: EmptyResponse };
 	'admin/roles/list': { req: EmptyRequest; res: AdminRolesListResponse };
@@ -1063,6 +1065,7 @@ export const endpointReqTypes: Record<keyof Endpoints, 'application/json' | 'mul
 	'admin/update-meta': 'application/json',
 	'admin/delete-account': 'application/json',
 	'admin/update-user-note': 'application/json',
+	'admin/prompt-id-check': 'application/json',
 	'admin/roles/create': 'application/json',
 	'admin/roles/delete': 'application/json',
 	'admin/roles/list': 'application/json',

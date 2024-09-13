@@ -10,6 +10,7 @@ import type { UsersRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import Stripe from 'stripe';
 import type { Config } from '@/config.js';
+import ms from 'ms';
 
 export const meta = {
 	tags: ['account'],
@@ -20,6 +21,11 @@ export const meta = {
 	res: {
 		type: 'object',
 		optional: false, nullable: false,
+	},
+
+	limit: {
+		duration: ms('1hour'),
+		max: 5,
 	},
 
 	errors: {

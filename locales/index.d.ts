@@ -1901,6 +1901,10 @@ export interface Locale extends ILocale {
      */
     "resetPassword": string;
     /**
+     * 身分証の確認を求める
+     */
+    "promptIdCheck": string;
+    /**
      * 新しいパスワードは「{password}」です
      */
     "newPasswordIs": ParameterizedString<"password">;
@@ -4461,6 +4465,10 @@ export interface Locale extends ILocale {
      * パスワードリセットしますか？
      */
     "resetPasswordConfirm": string;
+    /**
+     * 本当にこのユーザーのID確認を促しますか？
+     */
+    "promptIdCheckConfirm": string;
     /**
      * センシティブワード
      */

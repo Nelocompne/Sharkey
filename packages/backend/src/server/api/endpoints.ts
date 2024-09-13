@@ -103,6 +103,7 @@ import * as ep___admin_systemWebhook_delete from './endpoints/admin/system-webho
 import * as ep___admin_systemWebhook_list from './endpoints/admin/system-webhook/list.js';
 import * as ep___admin_systemWebhook_show from './endpoints/admin/system-webhook/show.js';
 import * as ep___admin_systemWebhook_update from './endpoints/admin/system-webhook/update.js';
+import * as ep___admin_prompt_id_check from './endpoints/admin/prompt-id-check.js';
 import * as ep___announcements from './endpoints/announcements.js';
 import * as ep___announcements_show from './endpoints/announcements/show.js';
 import * as ep___antennas_create from './endpoints/antennas/create.js';
@@ -484,6 +485,7 @@ const eps = [
 	['admin/update-meta', ep___admin_updateMeta],
 	['admin/delete-account', ep___admin_deleteAccount],
 	['admin/update-user-note', ep___admin_updateUserNote],
+	['admin/prompt-id-check', ep___admin_prompt_id_check],
 	['admin/roles/create', ep___admin_roles_create],
 	['admin/roles/delete', ep___admin_roles_delete],
 	['admin/roles/list', ep___admin_roles_list],

@@ -84,6 +84,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 						<div>
 							<MkButton v-if="user.host == null" inline style="margin-right: 8px;" @click="resetPassword"><i class="ti ti-key"></i> {{ i18n.ts.resetPassword }}</MkButton>
+							<MkButton v-if="user.host == null && user.idVerified == false && user.idCheckRequired == false" inline style="margin-right: 8px;" @click="promptIdCheck"><i class="ti ti-shield"></i> {{ i18n.ts.promptIdCheck }}</MkButton>
 						</div>
 
 						<MkFolder>
@@ -301,6 +302,21 @@ async function resetPassword() {
 			type: 'success',
 			text: i18n.tsx.newPasswordIs({ password }),
 		});
+	}
+}
+
+async function promptIdCheck() {
+	const confirm = await os.confirm({
+		type: 'warning',
+		text: i18n.ts.promptIdCheckConfirm,
+	});
+	if (confirm.canceled) {
+		return;
+	} else {
+		await misskeyApi('admin/prompt-id-check', {
+			userId: user.value.id,
+		});
+		await refreshUser();
 	}
 }
 

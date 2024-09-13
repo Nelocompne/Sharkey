@@ -104,6 +104,7 @@ export type AdminUnsuspendUserRequest = operations['admin___unsuspend-user']['re
 export type AdminUpdateMetaRequest = operations['admin___update-meta']['requestBody']['content']['application/json'];
 export type AdminDeleteAccountRequest = operations['admin___delete-account']['requestBody']['content']['application/json'];
 export type AdminUpdateUserNoteRequest = operations['admin___update-user-note']['requestBody']['content']['application/json'];
+export type AdminPromptIdCheckRequest = operations['admin___prompt-id-check']['requestBody']['content']['application/json'];
 export type AdminRolesCreateRequest = operations['admin___roles___create']['requestBody']['content']['application/json'];
 export type AdminRolesCreateResponse = operations['admin___roles___create']['responses']['200']['content']['application/json'];
 export type AdminRolesDeleteRequest = operations['admin___roles___delete']['requestBody']['content']['application/json'];
