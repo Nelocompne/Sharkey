@@ -131,7 +131,9 @@ export class StripeHookServerService {
 
 				this.logger.succ(`${user.username} has failed ID Verification via Session ${verificationSession.id}`);
 
-				await this.usersRepository.update(user.id, { idCheckRequired: false });
+
+				// If general instance then unset idCheckRequired as to prevent locking the user out forever admins/mods can see the mod note in case of the failure
+				if (!this.config.stripeAgeCheck.required) await this.usersRepository.update(user.id, { idCheckRequired: false });
 
 				await this.userProfilesRepository.update(user.id, { moderationNote: 'ADM/IDFAIL: Possibly underage' });
 

@@ -187,14 +187,14 @@ export class Router extends EventEmitter<RouterEvent> implements IRouter {
 	public currentRoute: ShallowRef<RouteDef>;
 	private currentPath: string;
 	private isLoggedIn: boolean;
-	private isNotIdConfirmed: boolean;
+	private isIdConfirmed: boolean;
 	private notFoundPageComponent: Component;
 	private currentKey = Date.now().toString();
 	private redirectCount = 0;
 
 	public navHook: ((path: string, flag?: any) => boolean) | null = null;
 
-	constructor(routes: Router['routes'], currentPath: Router['currentPath'], isLoggedIn: boolean, isNotIdConfirmed: boolean, notFoundPageComponent: Component) {
+	constructor(routes: Router['routes'], currentPath: Router['currentPath'], isLoggedIn: boolean, isIdConfirmed: boolean, notFoundPageComponent: Component) {
 		super();
 
 		this.routes = routes;
@@ -203,7 +203,7 @@ export class Router extends EventEmitter<RouterEvent> implements IRouter {
 		this.currentRoute = shallowRef(this.current.route);
 		this.currentPath = currentPath;
 		this.isLoggedIn = isLoggedIn;
-		this.isNotIdConfirmed = isNotIdConfirmed;
+		this.isIdConfirmed = isIdConfirmed;
 		this.notFoundPageComponent = notFoundPageComponent;
 	}
 
@@ -369,7 +369,7 @@ export class Router extends EventEmitter<RouterEvent> implements IRouter {
 			res.props.set('showLoginPopup', true);
 		}
 
-		if (res.route.idRequired && this.isNotIdConfirmed) {
+		if (res.route.idRequired && !this.isIdConfirmed) {
 			res.route.component = this.notFoundPageComponent;
 			res.props.set('showIdConfirm', true);
 		}

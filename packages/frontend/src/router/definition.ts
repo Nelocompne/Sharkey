@@ -18,6 +18,10 @@ const page = (loader: AsyncComponentLoader<any>) => defineAsyncComponent({
 	errorComponent: MkError,
 });
 
+const userNeedsChecking = $i && $i.idCheckRequired ? true : false;
+const noUserButCheckRequired = !$i && idRequired ? true : false;
+const userNotVerifiedYet = $i && !$i.idVerified && idRequired ? true : false;
+
 const routes: RouteDef[] = [{
 	path: '/@:initUser/pages/:initPageName/view-source',
 	component: page(() => import('@/pages/page-editor/page-editor.vue')),
@@ -53,7 +57,7 @@ const routes: RouteDef[] = [{
 	path: '/settings',
 	component: page(() => import('@/pages/settings/index.vue')),
 	loginRequired: true,
-	idRequired: $i && $i.idCheckRequired ? true : false,
+	idRequired: userNeedsChecking,
 	children: [{
 		path: '/profile',
 		name: 'profile',
@@ -337,11 +341,11 @@ const routes: RouteDef[] = [{
 }, {
 	path: '/channels/:channelId',
 	component: page(() => import('@/pages/channel.vue')),
-	idRequired: $i && $i.idCheckRequired || !$i && idRequired ? true : false,
+	idRequired: userNeedsChecking || noUserButCheckRequired,
 }, {
 	path: '/channels',
 	component: page(() => import('@/pages/channels.vue')),
-	idRequired: $i && $i.idCheckRequired || !$i && idRequired ? true : false,
+	idRequired: userNeedsChecking || noUserButCheckRequired,
 }, {
 	path: '/custom-emojis-manager',
 	component: page(() => import('@/pages/custom-emojis-manager.vue')),
@@ -563,12 +567,12 @@ const routes: RouteDef[] = [{
 	path: '/timeline/list/:listId',
 	component: page(() => import('@/pages/user-list-timeline.vue')),
 	loginRequired: true,
-	idRequired: $i && $i.idCheckRequired || !$i && idRequired ? true : false,
+	idRequired: userNeedsChecking || noUserButCheckRequired,
 }, {
 	path: '/timeline/antenna/:antennaId',
 	component: page(() => import('@/pages/antenna-timeline.vue')),
 	loginRequired: true,
-	idRequired: $i && $i.idCheckRequired || !$i && idRequired ? true : false,
+	idRequired: userNeedsChecking || !noUserButCheckRequired,
 }, {
 	path: '/clicker',
 	component: page(() => import('@/pages/clicker.vue')),
@@ -592,13 +596,13 @@ const routes: RouteDef[] = [{
 }, {
 	path: '/timeline',
 	component: page(() => import('@/pages/timeline.vue')),
-	idRequired: $i && $i.idCheckRequired || !$i && idRequired ? true : false,
+	idRequired: userNeedsChecking || noUserButCheckRequired,
 }, {
 	name: 'index',
 	path: '/',
 	component: $i ? page(() => import('@/pages/timeline.vue')) : page(() => import('@/pages/welcome.vue')),
 	globalCacheKey: 'index',
-	idRequired: $i && $i.idCheckRequired || $i && !$i.idVerified && idRequired ? true : false,
+	idRequired: userNeedsChecking || userNotVerifiedYet,
 }, {
 	// テスト用リダイレクト設定。ログイン中ユーザのプロフィールにリダイレクトする
 	path: '/redirect-test',
@@ -609,8 +613,10 @@ const routes: RouteDef[] = [{
 	component: page(() => import('@/pages/not-found.vue')),
 }];
 
+const isIdConfirmedCheck = userNeedsChecking ? false : true || noUserButCheckRequired ? false : true || userNotVerifiedYet ? false : true;
+
 function createRouterImpl(path: string): IRouter {
-	return new Router(routes, path, !!$i, $i && $i.idCheckRequired || !$i && idRequired || $i && !$i.idVerified && idRequired, page(() => import('@/pages/not-found.vue')));
+	return new Router(routes, path, !!$i, isIdConfirmedCheck, page(() => import('@/pages/not-found.vue')));
 }
 
 /**
