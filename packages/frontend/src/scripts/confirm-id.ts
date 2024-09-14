@@ -21,7 +21,7 @@ export function confirmId(path?: string) {
 			},
 			closed: () => dispose(),
 		});
-		return new Error('User Account required for id verification');
+		throw new Error('User Account required for id verification');
 	}
 
 	if ($i && $i.idVerified) return;
