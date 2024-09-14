@@ -572,7 +572,7 @@ const routes: RouteDef[] = [{
 	path: '/timeline/antenna/:antennaId',
 	component: page(() => import('@/pages/antenna-timeline.vue')),
 	loginRequired: true,
-	idRequired: userNeedsChecking || !noUserButCheckRequired,
+	idRequired: userNeedsChecking || noUserButCheckRequired,
 }, {
 	path: '/clicker',
 	component: page(() => import('@/pages/clicker.vue')),
@@ -613,10 +613,10 @@ const routes: RouteDef[] = [{
 	component: page(() => import('@/pages/not-found.vue')),
 }];
 
-const isIdConfirmedCheck = userNeedsChecking ? false : true || noUserButCheckRequired ? false : true || userNotVerifiedYet ? false : true;
+const isIdNotConfirmedCheck = userNeedsChecking || noUserButCheckRequired || userNotVerifiedYet;
 
 function createRouterImpl(path: string): IRouter {
-	return new Router(routes, path, !!$i, isIdConfirmedCheck, page(() => import('@/pages/not-found.vue')));
+	return new Router(routes, path, !!$i, isIdNotConfirmedCheck, page(() => import('@/pages/not-found.vue')));
 }
 
 /**
