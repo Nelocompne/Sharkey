@@ -53,7 +53,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private queryService: QueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-
 			if (this.config.stripeAgeCheck.enabled && me && me.idCheckRequired || this.config.stripeAgeCheck.required && me && !me.idVerified || this.config.stripeAgeCheck.required && !me) {
 				// return no notes until we can figure out a way to simulate notes
 				return [];
