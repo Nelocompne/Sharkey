@@ -10,6 +10,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { ApiError } from '../../error.js';
 import { CacheService } from '@/core/CacheService.js';
 import { MetaService } from '@/core/MetaService.js';
+import type { Config } from '@/config.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -54,6 +55,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
+		@Inject(DI.config)
+		private config: Config,
+
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 		private roleService: RoleService,
@@ -66,6 +70,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const instance = await this.metaService.fetch();
 			if (!policies.btlAvailable) {
 				throw new ApiError(meta.errors.btlDisabled);
+			}
+
+			if (this.config.stripeAgeCheck.enabled && me && me.idCheckRequired || this.config.stripeAgeCheck.required && me && !me.idVerified || this.config.stripeAgeCheck.required && !me) {
+				// return no notes until we can figure out a way to simulate notes
+				return [];
 			}
 
 			const [

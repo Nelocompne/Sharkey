@@ -17,6 +17,7 @@ import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { MiLocalUser } from '@/models/User.js';
 import { MetaService } from '@/core/MetaService.js';
 import { FanoutTimelineEndpointService } from '@/core/FanoutTimelineEndpointService.js';
+import type { Config } from '@/config.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -63,6 +64,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		@Inject(DI.channelFollowingsRepository)
 		private channelFollowingsRepository: ChannelFollowingsRepository,
 
+		@Inject(DI.config)
+		private config: Config,
+
 		private noteEntityService: NoteEntityService,
 		private activeUsersChart: ActiveUsersChart,
 		private idService: IdService,
@@ -77,6 +81,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const sinceId = ps.sinceId ?? (ps.sinceDate ? this.idService.gen(ps.sinceDate!) : null);
 
 			const serverSettings = await this.metaService.fetch();
+
+			if (this.config.stripeAgeCheck.enabled && me && me.idCheckRequired || this.config.stripeAgeCheck.required && me && !me.idVerified) {
+				// return no notes until we can figure out a way to simulate notes
+				return [];
+			}
 
 			if (!serverSettings.enableFanoutTimeline) {
 				const timeline = await this.getFromDb({

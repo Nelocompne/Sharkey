@@ -18,6 +18,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { MiLocalUser } from '@/models/User.js';
 import { FanoutTimelineEndpointService } from '@/core/FanoutTimelineEndpointService.js';
 import { ApiError } from '../../error.js';
+import type { Config } from '@/config.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -70,6 +71,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
+		@Inject(DI.config)
+		private config: Config,
+
 		private noteEntityService: NoteEntityService,
 		private roleService: RoleService,
 		private activeUsersChart: ActiveUsersChart,
@@ -86,6 +90,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const policies = await this.roleService.getUserPolicies(me ? me.id : null);
 			if (!policies.ltlAvailable) {
 				throw new ApiError(meta.errors.ltlDisabled);
+			}
+
+			if (this.config.stripeAgeCheck.enabled && me && me.idCheckRequired || this.config.stripeAgeCheck.required && me && !me.idVerified || this.config.stripeAgeCheck.required && !me) {
+				// return no notes until we can figure out a way to simulate notes
+				return [];
 			}
 
 			if (ps.withReplies && ps.withFiles) throw new ApiError(meta.errors.bothWithRepliesAndWithFiles);
