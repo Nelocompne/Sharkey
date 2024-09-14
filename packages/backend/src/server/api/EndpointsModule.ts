@@ -97,6 +97,7 @@ import * as ep___admin_systemWebhook_delete from './endpoints/admin/system-webho
 import * as ep___admin_systemWebhook_list from './endpoints/admin/system-webhook/list.js';
 import * as ep___admin_systemWebhook_show from './endpoints/admin/system-webhook/show.js';
 import * as ep___admin_systemWebhook_update from './endpoints/admin/system-webhook/update.js';
+import * as ep___admin_prompt_id_check from './endpoints/admin/prompt-id-check.js';
 import * as ep___announcements from './endpoints/announcements.js';
 import * as ep___announcements_show from './endpoints/announcements/show.js';
 import * as ep___antennas_create from './endpoints/antennas/create.js';
@@ -398,6 +399,7 @@ import * as ep___reversi_invitations from './endpoints/reversi/invitations.js';
 import * as ep___reversi_showGame from './endpoints/reversi/show-game.js';
 import * as ep___reversi_surrender from './endpoints/reversi/surrender.js';
 import * as ep___reversi_verify from './endpoints/reversi/verify.js';
+import * as ep___stripe_createVerifySession from './endpoints/stripe/create-verify-session.js';
 import { GetterService } from './GetterService.js';
 import { ApiLoggerService } from './ApiLoggerService.js';
 import type { Provider } from '@nestjs/common';
@@ -493,6 +495,7 @@ const $admin_systemWebhook_delete: Provider = { provide: 'ep:admin/system-webhoo
 const $admin_systemWebhook_list: Provider = { provide: 'ep:admin/system-webhook/list', useClass: ep___admin_systemWebhook_list.default };
 const $admin_systemWebhook_show: Provider = { provide: 'ep:admin/system-webhook/show', useClass: ep___admin_systemWebhook_show.default };
 const $admin_systemWebhook_update: Provider = { provide: 'ep:admin/system-webhook/update', useClass: ep___admin_systemWebhook_update.default };
+const $admin_prompt_id_check: Provider = { provide: 'ep:admin/prompt-id-check', useClass: ep___admin_prompt_id_check.default };
 const $announcements: Provider = { provide: 'ep:announcements', useClass: ep___announcements.default };
 const $announcements_show: Provider = { provide: 'ep:announcements/show', useClass: ep___announcements_show.default };
 const $antennas_create: Provider = { provide: 'ep:antennas/create', useClass: ep___antennas_create.default };
@@ -794,6 +797,7 @@ const $reversi_invitations: Provider = { provide: 'ep:reversi/invitations', useC
 const $reversi_showGame: Provider = { provide: 'ep:reversi/show-game', useClass: ep___reversi_showGame.default };
 const $reversi_surrender: Provider = { provide: 'ep:reversi/surrender', useClass: ep___reversi_surrender.default };
 const $reversi_verify: Provider = { provide: 'ep:reversi/verify', useClass: ep___reversi_verify.default };
+const $stripe_createVerifySession: Provider = { provide: 'ep:stripe/create-verify-session', useClass: ep___stripe_createVerifySession.default };
 
 @Module({
 	imports: [
@@ -893,6 +897,7 @@ const $reversi_verify: Provider = { provide: 'ep:reversi/verify', useClass: ep__
 		$admin_systemWebhook_list,
 		$admin_systemWebhook_show,
 		$admin_systemWebhook_update,
+		$admin_prompt_id_check,
 		$announcements,
 		$announcements_show,
 		$antennas_create,
@@ -1194,6 +1199,7 @@ const $reversi_verify: Provider = { provide: 'ep:reversi/verify', useClass: ep__
 		$reversi_showGame,
 		$reversi_surrender,
 		$reversi_verify,
+		$stripe_createVerifySession,
 	],
 	exports: [
 		$admin_meta,
@@ -1287,6 +1293,7 @@ const $reversi_verify: Provider = { provide: 'ep:reversi/verify', useClass: ep__
 		$admin_systemWebhook_list,
 		$admin_systemWebhook_show,
 		$admin_systemWebhook_update,
+		$admin_prompt_id_check,
 		$announcements,
 		$announcements_show,
 		$antennas_create,
@@ -1586,6 +1593,7 @@ const $reversi_verify: Provider = { provide: 'ep:reversi/verify', useClass: ep__
 		$reversi_showGame,
 		$reversi_surrender,
 		$reversi_verify,
+		$stripe_createVerifySession,
 	],
 })
 export class EndpointsModule {}

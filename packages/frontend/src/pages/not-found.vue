@@ -17,14 +17,20 @@ import { computed } from 'vue';
 import { i18n } from '@/i18n.js';
 import { definePageMetadata } from '@/scripts/page-metadata.js';
 import { pleaseLogin } from '@/scripts/please-login.js';
+import { confirmId } from '@/scripts/confirm-id.js';
 import { notFoundImageUrl } from '@/instance.js';
 
 const props = defineProps<{
 	showLoginPopup?: boolean;
+	showIdConfirm?: boolean;
 }>();
 
 if (props.showLoginPopup) {
 	pleaseLogin('/');
+}
+
+if (props.showIdConfirm) {
+	confirmId('/');
 }
 
 const headerActions = computed(() => []);

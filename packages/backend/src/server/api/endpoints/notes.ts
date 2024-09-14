@@ -9,6 +9,7 @@ import { Endpoint } from '@/server/api/endpoint-base.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
+import type { Config } from '@/config.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -45,10 +46,18 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
+		@Inject(DI.config)
+		private config: Config,
+
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
+			if (this.config.stripeAgeCheck.enabled && me && me.idCheckRequired || this.config.stripeAgeCheck.required && me && !me.idVerified || this.config.stripeAgeCheck.required && !me) {
+				// return no notes until we can figure out a way to simulate notes
+				return [];
+			}
+
 			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
 				.andWhere('note.visibility = \'public\'')
 				.andWhere('note.localOnly = FALSE')

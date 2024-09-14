@@ -139,6 +139,12 @@ export const meta = {
 			code: 'CONTAINS_TOO_MANY_MENTIONS',
 			id: '4de0363a-3046-481b-9b0f-feff3e211025',
 		},
+
+		userIdNotVerified: {
+			message: 'Cannot post because your account needs to go through ID Verification.',
+			code: 'USER_ID_NOT_VERIFIED',
+			id: '4de0363a-3046-481b-9b0f-feff3e211029',
+		},
 	},
 } as const;
 
@@ -254,6 +260,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		super(meta, paramDef, async (ps, me) => {
 			if (ps.text && (ps.text.length > this.config.maxNoteLength)) {
 				throw new ApiError(meta.errors.maxLength);
+			}
+
+			if (this.config.stripeAgeCheck.enabled && me && me.idCheckRequired || this.config.stripeAgeCheck.required && me && !me.idVerified) {
+				throw new ApiError(meta.errors.userIdNotVerified);
 			}
 
 			let visibleUsers: MiUser[] = [];

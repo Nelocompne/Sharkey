@@ -453,6 +453,14 @@ export const packedUserDetailedNotMeOnlySchema = {
 			type: 'boolean',
 			nullable: false, optional: true,
 		},
+		idCheckRequired: {
+			type: 'boolean',
+			nullable: false, optional: false
+		},
+		idVerified: {
+			type: 'boolean',
+			nullable: false, optional: false
+		},
 		//#endregion
 	},
 } as const;
@@ -693,7 +701,7 @@ export const packedMeDetailedOnlySchema = {
 					},
 				},
 			},
-		},
+		}
 		//#endregion
 	},
 } as const;

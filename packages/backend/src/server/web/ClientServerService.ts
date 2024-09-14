@@ -198,6 +198,7 @@ export class ClientServerService {
 			notFoundImageUrl: meta.notFoundImageUrl ?? 'https://launcher.moe/missingpage.webp',
 			instanceUrl: this.config.url,
 			randomMOTD: this.config.customMOTD ? this.config.customMOTD[Math.floor(Math.random() * this.config.customMOTD.length)] : undefined,
+			idRequired: this.config.stripeAgeCheck.enabled && this.config.stripeAgeCheck.required ? "true" : "false",
 			metaJson: htmlSafeJsonStringify(await this.metaEntityService.packDetailed(meta)),
 			now: Date.now(),
 		};

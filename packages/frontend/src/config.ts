@@ -21,6 +21,7 @@ export const version = _VERSION_;
 export const instanceName = siteName === 'Sharkey' || siteName == null ? host : siteName;
 export const ui = miLocalStorage.getItem('ui');
 export const debug = miLocalStorage.getItem('debug') === 'true';
+export const idRequired = document.querySelector<HTMLMetaElement>('meta[property="idRequired"]')?.content === 'true' ? true : false;
 
 export function updateLocale(newLocale): void {
 	locale = newLocale;

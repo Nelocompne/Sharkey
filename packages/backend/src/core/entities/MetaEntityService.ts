@@ -165,6 +165,7 @@ export class MetaEntityService {
 				turnstile: instance.enableTurnstile,
 				objectStorage: instance.useObjectStorage,
 				serviceWorker: instance.enableServiceWorker,
+				idRequired: this.config.stripeAgeCheck.enabled && this.config.stripeAgeCheck.required ? true : false,
 				miauth: true,
 			},
 		};

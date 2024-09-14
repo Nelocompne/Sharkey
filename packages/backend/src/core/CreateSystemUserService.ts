@@ -63,6 +63,8 @@ export class CreateSystemUserService {
 				isExplorable: false,
 				approved: true,
 				isBot: true,
+				idCheckRequired: false,
+				idVerified: true,
 			}).then(x => transactionalEntityManager.findOneByOrFail(MiUser, x.identifiers[0]));
 
 			await transactionalEntityManager.insert(MiUserKeypair, {

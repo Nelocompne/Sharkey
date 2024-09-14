@@ -109,6 +109,7 @@ export const permissions = [
 	'read:admin:drive',
 	'write:admin:ad',
 	'read:admin:ad',
+	'write:admin:prompt-id-check-user',
 	'write:invite-codes',
 	'read:invite-codes',
 	'write:clip-favorite',

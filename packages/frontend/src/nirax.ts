@@ -13,6 +13,7 @@ interface RouteDefBase {
 	path: string;
 	query?: Record<string, string>;
 	loginRequired?: boolean;
+	idRequired?: boolean;
 	name?: string;
 	hash?: string;
 	globalCacheKey?: string;
@@ -186,13 +187,14 @@ export class Router extends EventEmitter<RouterEvent> implements IRouter {
 	public currentRoute: ShallowRef<RouteDef>;
 	private currentPath: string;
 	private isLoggedIn: boolean;
+	private isIdNotConfirmed: boolean;
 	private notFoundPageComponent: Component;
 	private currentKey = Date.now().toString();
 	private redirectCount = 0;
 
 	public navHook: ((path: string, flag?: any) => boolean) | null = null;
 
-	constructor(routes: Router['routes'], currentPath: Router['currentPath'], isLoggedIn: boolean, notFoundPageComponent: Component) {
+	constructor(routes: Router['routes'], currentPath: Router['currentPath'], isLoggedIn: boolean, isIdNotConfirmed: boolean, notFoundPageComponent: Component) {
 		super();
 
 		this.routes = routes;
@@ -201,6 +203,7 @@ export class Router extends EventEmitter<RouterEvent> implements IRouter {
 		this.currentRoute = shallowRef(this.current.route);
 		this.currentPath = currentPath;
 		this.isLoggedIn = isLoggedIn;
+		this.isIdNotConfirmed = isIdNotConfirmed;
 		this.notFoundPageComponent = notFoundPageComponent;
 	}
 
@@ -364,6 +367,11 @@ export class Router extends EventEmitter<RouterEvent> implements IRouter {
 		if (res.route.loginRequired && !this.isLoggedIn) {
 			res.route.component = this.notFoundPageComponent;
 			res.props.set('showLoginPopup', true);
+		}
+
+		if (res.route.idRequired && this.isIdNotConfirmed) {
+			res.route.component = this.notFoundPageComponent;
+			res.props.set('showIdConfirm', true);
 		}
 
 		const isSamePath = beforePath === path;

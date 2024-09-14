@@ -1901,6 +1901,10 @@ export interface Locale extends ILocale {
      */
     "resetPassword": string;
     /**
+     * 身分証の確認を求める
+     */
+    "promptIdCheck": string;
+    /**
      * 新しいパスワードは「{password}」です
      */
     "newPasswordIs": ParameterizedString<"password">;
@@ -4461,6 +4465,10 @@ export interface Locale extends ILocale {
      * パスワードリセットしますか？
      */
     "resetPasswordConfirm": string;
+    /**
+     * 本当にこのユーザーのID確認を促しますか？
+     */
+    "promptIdCheckConfirm": string;
     /**
      * センシティブワード
      */
@@ -10868,6 +10876,34 @@ export interface Locale extends ILocale {
          * ブラウザのUI
          */
         "native": string;
+    };
+    "_stripeAgeCheck": {
+        /**
+         * ご本人様確認をさせていただきますので、スタートボタンを押して手続きを開始してください。
+         */
+        "startText": string;
+        /**
+         * 新しいタブでStripeを開くボタンを押すと、Stripeでの本人確認が開始されます。
+         */
+        "beginProcess": string;
+        /**
+         * Stripeでの本人確認手続きが完了した場合は、数秒待ってから完了をクリックしてください。
+         */
+        "endProcess": string;
+        "_buttons": {
+            /**
+             * 検証を開始する
+             */
+            "start": string;
+            /**
+             * 新しいタブでStripeを開く
+             */
+            "openInNewTab": string;
+            /**
+             * 完成を確認する
+             */
+            "confirmFinish": string;
+        };
     };
 }
 declare const locales: {

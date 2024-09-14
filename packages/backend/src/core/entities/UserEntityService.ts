@@ -605,6 +605,8 @@ export class UserEntityService implements OnModuleInit {
 				}))),
 				memo: memo,
 				moderationNote: iAmModerator ? (profile!.moderationNote ?? '') : undefined,
+				idCheckRequired: user.idCheckRequired,
+				idVerified: user.idVerified,
 			} : {}),
 
 			...(isDetailed && isMe ? {

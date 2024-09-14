@@ -711,6 +711,15 @@ export type paths = {
      */
     post: operations['admin___update-user-note'];
   };
+  '/admin/prompt-id-check': {
+    /**
+     * admin/prompt-id-check
+     * @description No description provided.
+     *
+     * **Credential required**: *Yes* / **Permission**: *write:admin:prompt-id-check-user*
+     */
+    post: operations['admin___prompt-id-check'];
+  };
   '/admin/roles/create': {
     /**
      * admin/roles/create
@@ -3767,6 +3776,15 @@ export type paths = {
      */
     post: operations['reversi___verify'];
   };
+  '/stripe/create-verify-session': {
+    /**
+     * stripe/create-verify-session
+     * @description No description provided.
+     *
+     * **Credential required**: *Yes* / **Permission**: *read:account*
+     */
+    post: operations['stripe___create-verify-session'];
+  };
 };
 
 export type webhooks = Record<string, never>;
@@ -3912,6 +3930,8 @@ export type components = {
       /** @enum {string} */
       notify?: 'normal' | 'none';
       withReplies?: boolean;
+      idCheckRequired: boolean;
+      idVerified: boolean;
     };
     MeDetailedOnly: {
       /** Format: id */
@@ -5108,6 +5128,7 @@ export type components = {
         recaptcha: boolean;
         objectStorage: boolean;
         serviceWorker: boolean;
+        idRequired: boolean;
         /** @default true */
         miauth?: boolean;
       };
@@ -9207,6 +9228,8 @@ export type operations = {
                 expiresAt: string | null;
                 roleId: string;
               })[];
+            idVerified: boolean;
+            idCheckRequired: boolean;
           };
         };
       };
@@ -9916,6 +9939,58 @@ export type operations = {
           /** Format: misskey:id */
           userId: string;
           text: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK (without any results) */
+      204: {
+        content: never;
+      };
+      /** @description Client error */
+      400: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication error */
+      401: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden error */
+      403: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description I'm Ai */
+      418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  /**
+   * admin/prompt-id-check
+   * @description No description provided.
+   *
+   * **Credential required**: *Yes* / **Permission**: *write:admin:prompt-id-check-user*
+   */
+  'admin___prompt-id-check': {
+    requestBody: {
+      content: {
+        'application/json': {
+          /** Format: misskey:id */
+          userId: string;
         };
       };
     };
@@ -28529,6 +28604,58 @@ export type operations = {
       };
       /** @description I'm Ai */
       418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+    };
+  };
+  /**
+   * stripe/create-verify-session
+   * @description No description provided.
+   *
+   * **Credential required**: *Yes* / **Permission**: *read:account*
+   */
+  'stripe___create-verify-session': {
+    responses: {
+      /** @description OK (with results) */
+      200: {
+        content: {
+          'application/json': Record<string, never>;
+        };
+      };
+      /** @description Client error */
+      400: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Authentication error */
+      401: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description Forbidden error */
+      403: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description I'm Ai */
+      418: {
+        content: {
+          'application/json': components['schemas']['Error'];
+        };
+      };
+      /** @description To many requests */
+      429: {
         content: {
           'application/json': components['schemas']['Error'];
         };
