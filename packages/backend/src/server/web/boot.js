@@ -91,7 +91,7 @@
 		await import(`/vite/${CLIENT_ENTRY}`)
 			.catch(async e => {
 				console.error(e);
-				renderError('APP_IMPORT', e);
+				renderError('APP_IMPORT', e.toString());
 			});
 	}
 
