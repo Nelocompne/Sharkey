@@ -69,7 +69,7 @@
 		await import(`/vite/${CLIENT_ENTRY}`)
 			.catch(async e => {
 				console.error(e);
-				renderError('APP_IMPORT', e.toString());
+				renderError('APP_IMPORT', `${e} - ${e.fileName}:${e.lineNumber}:${e.columnNumber}`);
 			});
 	}
 
