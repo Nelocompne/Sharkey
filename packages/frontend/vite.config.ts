@@ -2,7 +2,6 @@ import path from 'path';
 import pluginReplace from '@rollup/plugin-replace';
 import pluginVue from '@vitejs/plugin-vue';
 import { type UserConfig, defineConfig } from 'vite';
-import babel from 'vite-plugin-babel';
 
 import locales from '../../locales/index.js';
 import meta from '../../package.json';
@@ -84,18 +83,6 @@ export function getConfig(): UserConfig {
 					}),
 				]
 				: [],
-			babel({
-				presets: [
-					[
-						"@babel/preset-env",
-						{
-							"useBuiltIns": "entry",
-							"corejs": "3.22"
-						}
-					],
-					"@babel/preset-typescript"
-				]
-			})
 		],
 
 		resolve: {
