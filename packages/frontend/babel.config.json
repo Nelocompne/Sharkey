@@ -8,5 +8,11 @@
       }
     ],
     "@babel/preset-typescript"
-  ]
+  ],
+  "plugins": [
+    ["polyfill-corejs3", { "method": "entry-global", "version": "3.20" }]
+  ],
+  "targets": {
+    "esmodules": true
+  }
 }
