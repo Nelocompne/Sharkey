@@ -2,6 +2,8 @@ import path from 'path';
 import pluginReplace from '@rollup/plugin-replace';
 import pluginVue from '@vitejs/plugin-vue';
 import { type UserConfig, defineConfig } from 'vite';
+import babel from '@rollup/plugin-babel';
+import topLevelAwait from "vite-plugin-top-level-await";
 
 import locales from '../../locales/index.js';
 import meta from '../../package.json';
@@ -83,6 +85,12 @@ export function getConfig(): UserConfig {
 					}),
 				]
 				: [],
+			topLevelAwait({
+				// The export name of top-level await promise for each chunk module
+				promiseExportName: "__tla",
+				// The function to generate import names of top-level await promise in each chunk module
+				promiseImportName: i => `__tla_${i}`
+			})
 		],
 
 		resolve: {
@@ -149,6 +157,7 @@ export function getConfig(): UserConfig {
 						return id;
 					},
 				},
+				plugins: [babel({ babelHelpers: 'bundled' })]
 			},
 			cssCodeSplit: true,
 			outDir: __dirname + '/../../built/_vite_',
