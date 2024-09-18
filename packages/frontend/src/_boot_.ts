@@ -4,6 +4,7 @@
  */
 
 // https://vitejs.dev/config/build-options.html#build-modulepreload
+import "core-js/stable";
 import 'vite/modulepreload-polyfill';
 
 import '@/style.scss';
