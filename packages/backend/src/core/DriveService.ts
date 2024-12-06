@@ -259,7 +259,7 @@ export class DriveService {
 			if (this.config.useOVIStorage && this.config.oviStorageHost) {
 				file.storedInOVI = true;
 				file.url = `https://${ this.config.oviStorageHost }/api/raw/?path=${this.config.oviStoragePath}/${accessKey}&proxy=true&odpt=${this.config.oviStorageODPT}`;
-				file.uri = file.url;
+				file.src = file.uri = file.url;
 				file.thumbnailUrl = `https://${ this.config.oviStorageHost }/api/raw/?path=${this.config.oviStoragePath}/${thumbnailAccessKey}&proxy=true&odpt=${this.config.oviStorageODPT}`;
 				file.webpublicUrl = `https://${ this.config.oviStorageHost }/api/raw/?path=${this.config.oviStoragePath}/${webpublicAccessKey}&proxy=true&odpt=${this.config.oviStorageODPT}`;
 			}
