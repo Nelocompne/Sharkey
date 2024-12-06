@@ -47,10 +47,17 @@ type Source = {
 		user: string;
 		pass: string;
 	}[];
+
+	redirectRemoteFiles?: boolean;
+
 	redis: RedisOptionsSource;
 	redisForPubsub?: RedisOptionsSource;
 	redisForJobQueue?: RedisOptionsSource;
 	redisForTimelines?: RedisOptionsSource;
+
+	remoteCFConvert?: boolean;
+	remoteCFConvertZone?: string;
+
 	meilisearch?: {
 		host: string;
 		port: string;
@@ -109,6 +116,11 @@ type Source = {
 	};
 
 	pidFile: string;
+
+	useOVIStorage?: boolean;
+	oviStorageHost?: string;
+	oviStoragePath?: string;
+	oviStorageODPT?: string;
 };
 
 export type Config = {
@@ -177,6 +189,10 @@ export type Config = {
 	authUrl: string;
 	driveUrl: string;
 	userAgent: string;
+	useOVIStorage: boolean;
+	oviStorageHost: string;
+	oviStoragePath: string;
+	oviStorageODPT: string;
 	clientEntry: string;
 	clientManifestExists: boolean;
 	mediaProxy: string;
@@ -186,6 +202,9 @@ export type Config = {
 	redisForPubsub: RedisOptions & RedisOptionsSource;
 	redisForJobQueue: RedisOptions & RedisOptionsSource;
 	redisForTimelines: RedisOptions & RedisOptionsSource;
+	redirectRemoteFiles: boolean;
+	remoteCFConvert: boolean;
+	remoteCFConvertZone: string;
 	sentryForBackend: { options: Partial<Sentry.NodeOptions>; enableNodeProfiling: boolean; } | undefined;
 	sentryForFrontend: { options: Partial<Sentry.NodeOptions> } | undefined;
 	perChannelMaxNoteCacheCount: number;
@@ -282,6 +301,9 @@ export function loadConfig(): Config {
 		redisForPubsub: config.redisForPubsub ? convertRedisOptions(config.redisForPubsub, host) : redis,
 		redisForJobQueue: config.redisForJobQueue ? convertRedisOptions(config.redisForJobQueue, host) : redis,
 		redisForTimelines: config.redisForTimelines ? convertRedisOptions(config.redisForTimelines, host) : redis,
+		redirectRemoteFiles: config.redirectRemoteFiles ?? false,
+		remoteCFConvert: config.remoteCFConvert ?? false,
+		remoteCFConvertZone: config.remoteCFConvertZone ?? '',
 		sentryForBackend: config.sentryForBackend,
 		sentryForFrontend: config.sentryForFrontend,
 		id: config.id,
@@ -313,6 +335,10 @@ export function loadConfig(): Config {
 			config.videoThumbnailGenerator.endsWith('/') ? config.videoThumbnailGenerator.substring(0, config.videoThumbnailGenerator.length - 1) : config.videoThumbnailGenerator
 			: null,
 		userAgent: `Misskey/${version} (${config.url})`,
+		useOVIStorage: config.useOVIStorage ?? false,
+		oviStorageHost: config.oviStorageHost ?? '',
+		oviStoragePath: config.oviStoragePath ?? '/',
+		oviStorageODPT: config.oviStorageODPT ?? '',
 		clientEntry: clientManifest['src/_boot_.ts'],
 		clientManifestExists: clientManifestExists,
 		perChannelMaxNoteCacheCount: config.perChannelMaxNoteCacheCount ?? 1000,
@@ -466,4 +492,7 @@ function applyEnvOverrides(config: Source) {
 	_apply_top([['maxFileSize', 'maxNoteLength', 'pidFile']]);
 	_apply_top(['import', ['downloadTimeout', 'maxFileSize']]);
 	_apply_top([['signToActivityPubGet', 'checkActivityPubGetSignature']]);
+	_apply_top([['redirectRemoteFiles']]);
+	_apply_top([['remoteCFConvert', 'remoteCFConvertZone']]);
+	_apply_top([['useOVIStorage', 'oviStorageHost', 'oviStoragePath', 'oviStorageODPT']]);
 }

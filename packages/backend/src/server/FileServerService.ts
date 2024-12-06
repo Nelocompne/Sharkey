@@ -170,6 +170,11 @@ export class FileServerService {
 				}
 
 				if (!image) {
+					if (this.config.redirectRemoteFiles) {
+						const url = new URL(file.url);
+						file.cleanup();
+						return await reply.redirect(302, url.toString());
+					}
 					if (request.headers.range && file.file.size > 0) {
 						const range = request.headers.range as string;
 						const parts = range.replace(/bytes=/, '').split('-');
@@ -346,6 +351,30 @@ export class FileServerService {
 					// 画像でないなら404でお茶を濁す
 					throw new StatusError('Unexpected mime', 404);
 				}
+			}
+
+			// Redirect to Cloudflare Images if enabled
+			if (this.config.remoteCFConvert && this.config.remoteCFConvertZone) {
+				let options: string | null = null;
+				if ('emoji' in request.query || 'avatar' in request.query) {
+					if (isAnimationConvertibleImage || 'static' in request.query) {
+						options = `format=webp,height=${'emoji' in request.query ? 128 : 320}`;
+					}
+				} else if ('static' in request.query) {
+					options = 'format=webp,width=498,height=422,fit=scale-down';
+				} else if ('preview' in request.query) {
+					options = 'format=webp,width=200,height=200,fit=scale-down';
+				} else if ('badge' in request.query) {
+					options = 'format=png,width=96,height=96,fit=contain,saturation=0,contrast=1.75,background=#000';
+				} else if (file.mime === 'image/svg+xml') {
+					options = 'format=webp,width=2048,height=2048,fit=scale-down';
+				} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
+					throw new StatusError('Rejected type', 403, 'Rejected type');
+				}
+				reply.redirect(
+					301,
+					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/${encodeURI(options)}/${url}` : url,
+				);
 			}
 
 			let image: IImageStreamable | null = null;
@@ -528,7 +557,7 @@ export class FileServerService {
 		const isThumbnail = file.thumbnailAccessKey === key;
 		const isWebpublic = file.webpublicAccessKey === key;
 
-		if (!file.storedInternal) {
+		if (!file.storedInternal || file.storedInOVI) {
 			if (!(file.isLink && file.uri)) return '204';
 			const result = await this.downloadAndDetectTypeFromUrl(file.uri);
 			file.size = (await fs.promises.stat(result.path)).size;	// DB file.sizeは正確とは限らないので
