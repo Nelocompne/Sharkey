@@ -82,12 +82,6 @@ export class MiDriveFile {
 	@Column('boolean')
 	public storedInternal: boolean;
 
-	@Column('boolean', {
-		default: false,
-		comment: 'Stored in onedrive-vercel-index',
-	})
-	public storedInOVI: boolean;
-
 	@Column('varchar', {
 		length: 1024,
 		comment: 'The URL of the DriveFile.',

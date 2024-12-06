@@ -576,7 +576,7 @@ export class FileServerService {
 
 		const path = this.internalStorageService.resolvePath(key);
 
-		if (file.storedInOVI) {
+		if (this.config.useOVIStorage) {
 			if (!file.uri) return '204';
 			const { mime, ext } = await this.fileInfoService.detectType(path);
 			return {
