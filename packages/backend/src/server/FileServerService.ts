@@ -294,7 +294,7 @@ export class FileServerService {
 	}
 
 	@bindThis
-	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; }; }>, reply: FastifyReply) {
+	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; proxy?: string; odpt?: string }; }>, reply: FastifyReply) {
 		const url = 'url' in request.query ? request.query.url : 'https://' + request.params.url;
 
 		if (typeof url !== 'string') {
@@ -371,13 +371,16 @@ export class FileServerService {
 				} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
 					throw new StatusError('Rejected type', 403, 'Rejected type');
 				}
-				const urlObj = new URL(url);
+				const targetURL = new URL(url);
 				if (this.config.useOVIStorage) {
-					urlObj.searchParams.set('proxy', 'false');
+					targetURL.searchParams.set('proxy', 'false');
+					if ('odpt' in request.query) {
+						targetURL.searchParams.set('odpt', request.query.odpt as string);
+					}
 				}
 				return await reply.redirect(
 					301,
-					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/${encodeURI(options)}/${urlObj}` : urlObj.toString(),
+					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/${encodeURI(options)}/${targetURL}` : targetURL.toString(),
 				);
 			}
 
