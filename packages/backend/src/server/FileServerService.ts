@@ -561,7 +561,7 @@ export class FileServerService {
 		const isThumbnail = file.thumbnailAccessKey === key;
 		const isWebpublic = file.webpublicAccessKey === key;
 
-		if (!file.storedInternal || file.storedInOVI) {
+		if (!file.storedInternal) {
 			if (!(file.isLink && file.uri)) return '204';
 			const result = await this.downloadAndDetectTypeFromUrl(file.uri);
 			file.size = (await fs.promises.stat(result.path)).size;	// DB file.sizeは正確とは限らないので
@@ -575,6 +575,21 @@ export class FileServerService {
 		}
 
 		const path = this.internalStorageService.resolvePath(key);
+
+		if (file.storedInOVI) {
+			if (!file.uri) return '204';
+			const { mime, ext } = await this.fileInfoService.detectType(path);
+			return {
+				state: 'remote',
+				url: file.uri,
+				fileRole: isThumbnail ? 'thumbnail' : isWebpublic ? 'webpublic' : 'original',
+				file,
+				filename: file.name,
+				mime, ext,
+				path,
+				cleanup: () => {},
+			};
+		}
 
 		if (isThumbnail || isWebpublic) {
 			const { mime, ext } = await this.fileInfoService.detectType(path);
