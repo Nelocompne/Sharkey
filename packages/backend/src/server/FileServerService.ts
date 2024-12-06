@@ -371,9 +371,13 @@ export class FileServerService {
 				} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
 					throw new StatusError('Rejected type', 403, 'Rejected type');
 				}
-				reply.redirect(
+				const urlObj = new URL(url);
+				if (this.config.useOVIStorage) {
+					urlObj.searchParams.set('proxy', 'false');
+				}
+				return await reply.redirect(
 					301,
-					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/${encodeURI(options)}/${url}` : url,
+					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/${encodeURI(options)}/${urlObj}` : urlObj.toString(),
 				);
 			}
 
