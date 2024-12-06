@@ -294,12 +294,25 @@ export class FileServerService {
 	}
 
 	@bindThis
-	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; proxy?: string; odpt?: string }; }>, reply: FastifyReply) {
+	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; odpt?: string }; }>, reply: FastifyReply) {
 		const url = 'url' in request.query ? request.query.url : 'https://' + request.params.url;
 
 		if (typeof url !== 'string') {
 			reply.code(400);
 			return;
+		}
+
+		const targetURL = new URL(url);
+		if (this.config.useOVIStorage) {
+			targetURL.searchParams.set('proxy', 'false');
+			if ('odpt' in request.query) {
+				if (typeof request.query.odpt !== 'string') {
+					reply.code(400);
+					return;
+				} else {
+					targetURL.searchParams.set('odpt', request.query.odpt);
+				}
+			}
 		}
 
 		// アバタークロップなど、どうしてもオリジンである必要がある場合
@@ -323,7 +336,7 @@ export class FileServerService {
 		}
 
 		// Create temp file
-		const file = await this.getStreamAndTypeFromUrl(url);
+		const file = await this.getStreamAndTypeFromUrl(targetURL.toString());
 		if (file === '404') {
 			reply.code(404);
 			reply.header('Cache-Control', 'max-age=86400');
@@ -370,13 +383,6 @@ export class FileServerService {
 					options = 'format=webp,width=2048,height=2048,fit=scale-down';
 				} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
 					throw new StatusError('Rejected type', 403, 'Rejected type');
-				}
-				const targetURL = new URL(url);
-				if (this.config.useOVIStorage) {
-					targetURL.searchParams.set('proxy', 'false');
-					if ('odpt' in request.query) {
-						targetURL.searchParams.set('odpt', request.query.odpt as string);
-					}
 				}
 				return await reply.redirect(
 					301,
