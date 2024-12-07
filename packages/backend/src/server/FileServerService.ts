@@ -386,7 +386,7 @@ export class FileServerService {
 				}
 				return await reply.redirect(
 					301,
-					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/${encodeURI(options)}/${targetURL}` : targetURL.toString(),
+					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/image/${encodeURI(options)}/${targetURL}` : targetURL.toString(),
 				);
 			}
 
