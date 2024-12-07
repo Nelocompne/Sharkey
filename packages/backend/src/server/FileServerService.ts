@@ -530,7 +530,8 @@ export class FileServerService {
 
 			return await this.getFileFromKey(key);
 		} else if (url.startsWith(`https://${this.config.oviStorageHost}/api/raw/`)) {
-			const key = (new URL(url)).searchParams.get('path');
+			const path = (new URL(url)).searchParams.get('path');
+			const key = path ? path.replace(`${this.config.oviStoragePath}/`, '').split('/').shift() : path;
 			if (!key) throw new StatusError('Invalid File Key', 400, 'Invalid File Key');
 			return await this.getFileFromKey(key);
 		}
