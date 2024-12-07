@@ -378,7 +378,7 @@ export class FileServerService {
 				} else if ('preview' in request.query) {
 					options = 'format=webp,width=200,height=200,fit=scale-down';
 				} else if ('badge' in request.query) {
-					options = 'format=png,width=96,height=96,fit=contain,saturation=0,contrast=1.75,background=#000';
+					options = 'format=png,width=96,height=96,fit=contain,saturation=0,contrast=1.75,background=%23000';	// #000
 				} else if (file.mime === 'image/svg+xml') {
 					options = 'format=webp,width=2048,height=2048,fit=scale-down';
 				} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
@@ -387,7 +387,7 @@ export class FileServerService {
 				if (options) {
 					return await reply.redirect(
 						301,
-						`https://${this.config.remoteCFConvertZone}/cdn-cgi/image/${encodeURI(options)}/${targetURL}`,
+						`https://${this.config.remoteCFConvertZone}/cdn-cgi/image/${options}/${targetURL}`,
 					);
 				} else {
 					targetURL.searchParams.set('proxy', 'true');
