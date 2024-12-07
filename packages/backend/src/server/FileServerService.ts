@@ -384,10 +384,15 @@ export class FileServerService {
 				} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
 					throw new StatusError('Rejected type', 403, 'Rejected type');
 				}
-				return await reply.redirect(
-					301,
-					options ? `https://${this.config.remoteCFConvertZone}/cdn-cgi/image/${encodeURI(options)}/${targetURL}` : targetURL.toString(),
-				);
+				if (options) {
+					return await reply.redirect(
+						301,
+						`https://${this.config.remoteCFConvertZone}/cdn-cgi/image/${encodeURI(options)}/${targetURL}`,
+					);
+				} else {
+					targetURL.searchParams.set('proxy', 'true');
+					return await reply.redirect(301, targetURL.toString());
+				}
 			}
 
 			let image: IImageStreamable | null = null;
